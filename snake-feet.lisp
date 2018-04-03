@@ -414,7 +414,7 @@
   (load-from-iterator (iterator-cache iter)))
 
 (defmethod did-load-from-iterator? ((iter iterator-reverse))
-  (was-load-from-iterator (iterator-cache iter)))
+  (did-load-from-iterator (iterator-cache iter)))
 
 (defmethod aref-cache ((iter iterator-reverse) index)
   (aref-cache (iterator-cache iter) index))
@@ -673,3 +673,16 @@
     (lambda (element)
       (equal element item))
     iter))
+
+;; macro utilities
+
+(defmacro doiterator (argument &body body)
+  (let
+    ((variable (nth 0 argument))
+      (formula (nth 1 argument))
+      (result (nth 2 argument))
+      (iter (gensym)))
+    `(loop with ,iter = (iterator ,formula) with ,variable do
+       (setq ,variable (next ,iter))
+       if (eq ,variable *stop-iteration*) return ,result 
+       do (progn ,@body))))
