@@ -172,7 +172,7 @@
      :initform nil
      :accessor iterator-nodes)))
 
-(defmethod next ((iter iterator-node))
+(defmethod next ((iter iterator-cons))
   (loop  with node 
     if (null (iterator-nodes iter)) return *stop-iteration* 
     else do (setq node (pop (iterator-nodes iter)))
@@ -181,11 +181,11 @@
     (push (car node) (iterator-nodes iter))
     else return node))
 
-(defmethod copy ((iter iterator-node))
+(defmethod copy ((iter iterator-cons))
   (let ((niter (make-instance 'iterator-cons)))
     (prog1 niter (copy-from niter iter))))
 
-(defmethod copy-from :after ((iter iterator-node) (iter-from iterator-node))
+(defmethod copy-from :after ((iter iterator-cons) (iter-from iterator-cons))
   (setf (iterator-nodes iter) (iterator-nodes iter-from)))
 
 ;; vector 
