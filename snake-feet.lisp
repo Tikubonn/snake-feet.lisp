@@ -4,12 +4,15 @@
 
 ;; package 
 
+(provide 'snake-feet)
+
 (defpackage snake-feet 
   (:use :common-lisp)
   (:export :iterator :range :repeat :imap
     :ifiler :islice :iappend :ireverse :isort
     :ireduce :ifind-if :ifind :iposition-if :iposition
-    :icount-if :icount :next :skip))
+    :icount-if :icount :next :skip :copy :doiterator
+    :ievery :isome :istep :izip))
 
 (in-package snake-feet)
 
@@ -69,32 +72,57 @@
   ((current
      :initarg :start
      :initform 0
+     :type number 
      :accessor iterator-current)
     (start
       :initarg :start
       :initform 0
+      :type number 
       :accessor iterator-start)
     (end
       :initarg :end
       :initform 0
+      :type number 
       :accessor iterator-end)
     (step
       :initarg :step
       :initform 1
+      :type number 
       :accessor iterator-step)))
 
 (defmethod iterator-range-end? ((ran iterator-range))
+  (declare (optimize (speed 3)))
+  (declare (type iterator-range ran))
   (cond 
-    ((< (iterator-step ran) 0)
-      (< (iterator-current ran) (iterator-end ran)))
-    ((> (iterator-step ran) 0)
-      (> (iterator-current ran) (iterator-end ran)))))
+    ((< (the number (iterator-step ran)) 0)
+      (the boolean
+        (< (the number (iterator-current ran))
+          (the number (iterator-end ran)))))
+    ((> (the number (iterator-step ran)) 0)
+      (the boolean 
+        (> (the number (iterator-current ran)) 
+          (the number (iterator-end ran)))))))
+
+;; (defmethod iterator-range-end? ((ran iterator-range))
+;;   (cond 
+;;     ((< (iterator-step ran) 0)
+;;       (< (iterator-current ran) (iterator-end ran)))
+;;     ((> (iterator-step ran) 0)
+;;       (> (iterator-current ran) (iterator-end ran)))))
 
 (defmethod next ((ran iterator-range))
+  (declare (optimize (speed 3)))
+  (declare (type iterator-range ran))
   (if (iterator-range-end? ran) *stop-iteration*
-    (prog1 (iterator-current ran)
-      (incf (iterator-current ran)
-        (iterator-step ran)))))
+    (prog1 (the number (iterator-current ran))
+      (incf (the number (iterator-current ran))
+        (the number (iterator-step ran))))))
+
+;; (defmethod next ((ran iterator-range))
+;;   (if (iterator-range-end? ran) *stop-iteration*
+;;     (prog1 (iterator-current ran)
+;;       (incf (iterator-current ran)
+;;         (iterator-step ran)))))
 
 (defmethod copy ((iter iterator-range))
   (let ((niter (make-instance 'iterator-range)))
@@ -264,12 +292,26 @@
      :initarg :function
      :accessor iterator-function)))
 
+;; (defclass iterator-map (iterator-iterator)
+;;   ((function
+;;      :initarg :function
+;;      :accessor iterator-function)))
+
 (defmethod next ((iter iterator-map))
+  (declare (type iterator-map iter))
+  (declare (optimize (speed 3)))
   (let ((element (next (iterator-iterator iter))))
     (if (eq element *stop-iteration*) *stop-iteration*
       (funcall (iterator-function iter) element))))
 
+;; (defmethod next ((iter iterator-map))
+;;   (let ((element (next (iterator-iterator iter))))
+;;     (if (eq element *stop-iteration*) *stop-iteration*
+;;       (funcall (iterator-function iter) element))))
+
 (defmethod skip ((iter iterator-map))
+  (declare (type iterator-map iter))
+  (declare (optimize (speed 3)))
   (next (iterator-iterator iter)))
 
 (defmethod copy ((iter iterator-map))
@@ -316,26 +358,55 @@
 (defclass iterator-slice (iterator-iterator)
   ((current
      :initform 0
+     :type integer
      :accessor iterator-current)
     (start
       :initarg :start
       :initform 0
+      :type integer 
       :accessor iterator-start)
     (end
       :initarg :end
       :initform 0
+      :type integer
       :accessor iterator-end)))
 
+;; (defclass iterator-slice (iterator-iterator)
+;;   ((current
+;;      :initform 0
+;;      :accessor iterator-current)
+;;     (start
+;;       :initarg :start
+;;       :initform 0
+;;       :accessor iterator-start)
+;;     (end
+;;       :initarg :end
+;;       :initform 0
+;;       :accessor iterator-end)))
+
 (defmethod next ((lis iterator-slice))
-  (loop while (< (iterator-current lis) (iterator-start lis)) do
+  (declare (type iterator-slice lis))
+  (declare (optimize (speed 3)))
+  (loop while (< (the integer (iterator-current lis)) (the integer (iterator-start lis))) do
     (skip (iterator-iterator lis))
     (incf (iterator-current lis)))
-  (if (< (iterator-end lis) (iterator-current lis)) *stop-iteration*
+  (if (< (the integer (iterator-end lis)) (the integer (iterator-current lis))) *stop-iteration*
     (let ((element (next (iterator-iterator lis))))
       (if (eq element *stop-iteration*) 
         *stop-iteration*
         (prog1 element
           (incf (iterator-current lis)))))))
+
+;; (defmethod next ((lis iterator-slice))
+;;   (loop while (< (iterator-current lis) (iterator-start lis)) do
+;;     (skip (iterator-iterator lis))
+;;     (incf (iterator-current lis)))
+;;   (if (< (iterator-end lis) (iterator-current lis)) *stop-iteration*
+;;     (let ((element (next (iterator-iterator lis))))
+;;       (if (eq element *stop-iteration*) 
+;;         *stop-iteration*
+;;         (prog1 element
+;;           (incf (iterator-current lis)))))))
 
 (defmethod copy ((iter iterator-slice))
   (let ((niter (make-instance 'iterator-slice)))
@@ -354,7 +425,7 @@
 
 ;; append 
 
-(defclass iterator-append (iterator-iterator)
+(defclass iterator-append (iterator)
   ((iterators 
      :initarg :iterators
      :initform nil
@@ -397,6 +468,82 @@
 (defmethod iappend (&rest iters)
   (make-instance 'iterator-append :iterators (mapcar 'iterator iters)))
 
+;; zip 
+
+(defclass iterator-zip (iterator)
+  ((iterators
+     :initarg :iterators
+     :initform nil
+     :accessor iterator-iterators)))
+
+(defmethod next ((iter iterator-zip))
+  (loop with element 
+    for iter in (iterator-iterator iter) do
+    (setq element (next iter))
+    if (eq element *stop-iteration*)
+    return *stop-iteration*
+    else collect element))
+
+(defmethod skip ((iter iterator-zip))
+  (loop for iter in (iterator-iterator iter) do 
+    (skip iter)))
+
+(defmethod copy ((iter iterator-zip))
+  (let ((niter (make-instance 'iterator-zip)))
+    (prog1 niter (copy-from niter iter))))
+
+(defmethod copy-from :after ((iter iterator-zip) (iter-from iterator-zip))
+  (setf (iterator-iterators iter) (mapcar 'copy (iterator-iterators iter-from))))
+
+(defmethod izip (&rest iterators)
+  (make-instance 'iterator-zip :iterators (mapcar 'iterator iterators)))
+
+;; step 
+
+(defclass iterator-step (iterator-iterator)
+  ((current 
+     :initform 0
+     :accessor iterator-current)
+    (offset 
+     :initarg :offset
+     :initform 0
+     :accessor iterator-offset)
+    (step 
+      :initarg :step
+      :initform 1
+      :accessor iterator-step)))
+
+(defmethod init ((iter iterator-step))
+  (loop while (< (iterator-current iter) (iterator-offset iter)) do
+    (skip (iterator-iterator iter))))
+
+(defmethod next ((iter iterator-step))
+  (init iter)
+  (loop repeat (iterator-step iter) do
+    (skip (iterator-iterator iter)))
+  (next (iterator-iterator iter)))
+
+(defmethod skip ((iter iterator-step))
+  (init iter)
+  (loop repeat (iterator-step  iter) do
+    (skip (iterator-iterator iter)))
+  (skip (iterator-iterator iter)))
+
+(defmethod copy ((iter iterator-step))
+  (let ((niter (make-instance 'iterator-skip)))
+    (prog1 niter (copy-from niter iter))))
+
+(defmethod copy-from :after ((iter iterator-step) (iter-from iterator-step))
+  (setf (iterator-current iter) (iterator-current iter-from))
+  (setf (iterator-offset iter) (iterator-offset iter-from))
+  (setf (iterator-step iter) (iterator-step iter-from)))
+
+(defmethod iskip (offset step iter)
+  (iskip (iterator iter)))
+
+(defmethod iskip (offset step (iter iterator))
+  (make-instance 'iterator-skip :offset offset :step step))
+
 ;; reverse (slow)
 
 (defclass iterator-reverse-cache (iterator-iterator-cache) ())
@@ -414,7 +561,7 @@
   (load-from-iterator (iterator-cache iter)))
 
 (defmethod did-load-from-iterator? ((iter iterator-reverse))
-  (did-load-from-iterator (iterator-cache iter)))
+  (did-load-from-iterator? (iterator-cache iter)))
 
 (defmethod aref-cache ((iter iterator-reverse) index)
   (aref-cache (iterator-cache iter) index))
@@ -512,7 +659,7 @@
 
 (defmethod next ((iter iterator-cache))
   (unless (< (iterator-index iter) (length (iterator-collection iter)))
-    (load-from-iterator))
+    (load-from-iterator iter))
   (if (< (iterator-index iter) (length (iterator-collection iter)))
     (prog1 (aref (iterator-index iter) (iterator-collection iter))
       (incf (iterator-index iter)))
@@ -538,7 +685,7 @@
   ()
   (:report
     (lambda (condition stream)
-      (form stream "iterator-file-error: ~a~%"
+      (format stream "iterator-file-error: ~a~%"
         (iterator-error-message condition)))))
 
 (defconstant *iterator-file-eof* (make-symbol "iterator-file-eof"))
