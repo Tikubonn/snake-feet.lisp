@@ -92,7 +92,9 @@
   (declare 
     (type iterator-function iter)
     (optimize (speed 3)))
-  (funcall (iterator-function-function iter)))
+  (the boolean
+    (let ((element (funcall (iterator-function-function iter))))
+      (if (eq element *stop-iteration*) nil t))))
 
 (defun copy-iterator-function (iter)
   (error "iterator-function cannot copy, because I cannot copy inner functions status."))
