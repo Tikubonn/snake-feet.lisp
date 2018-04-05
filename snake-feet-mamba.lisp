@@ -803,11 +803,10 @@
        if (eq ,variable *stop-iteration*) return ,result 
        do (progn ,@body))))
 
-;; utils 
+;; icount 
 
 (defun icount-if (function iter)
   (declare 
-    (type function function)
     (optimize (speed 3)))  
   (the integer
     (loop with count = 0 with element do
@@ -826,9 +825,13 @@
         (eql item element))
       iter)))
 
+(compile 'icount-if)
+(compile 'icount)
+
+;; find 
+
 (defun ifind-if (function iter)
   (declare 
-    (type function function)
     (optimize (speed 3)))
   (loop with element do 
     (setq element (next iter))
@@ -845,9 +848,13 @@
       (eql item element))
     iter))
 
+(compile 'ifind-if)
+(compile 'find)
+
+;; position 
+
 (defun iposition-if (function iter)
   (declare
-    (type function function)
     (optimize (speed 3)))
   (loop with position = 0 with element do
     (setq element (next iter))
@@ -864,3 +871,57 @@
     (lambda (element)
       (eql item element))
     iter))
+
+(compile 'iposition-if)
+(compile 'iposition)
+
+;; reduce 
+
+(defun ireduce-in (function result iter)
+  (declare 
+    (optimize (speed 3)))
+  (let ((element (next iter)))
+    (if (eq element *stop-iteration*) result 
+      (ireduce-in function 
+        (funcall function result element)
+        iter))))
+
+(defun ireduce (function iter)
+  (declare 
+    (optimize (speed 3)))
+  (let*
+    ((element1 (next iter))
+      (element2 (next iter)))
+    (if (eq element1 *stop-iteration*) nil
+      (if (eq element2 *stop-iteration*) element2
+        (ireduce-in function 
+          (funcall function element1 element2)
+          iter)))))
+
+(compile 'ireduce-in)
+(compile 'ireduce)
+
+;; ievery 
+
+(defun ievery (function iter)
+  (declare 
+    (optimize (speed 3)))
+  (the boolean
+    (let ((element (next iter)))
+      (if (eq element *stop-iteration*) t
+        (if (funcall function element)
+          (the boolean
+            (ievery function iter))
+          nil)))))
+
+;; isome 
+
+(defun isome (function iter)
+  (declare 
+    (optimize (speed 3))))
+  (the boolean 
+    (let ((element (next iter)))
+      (if (eq element *stop-iteration*) nil
+        (if (funcall function element) t
+          (the boolean 
+            (isome function iter)))))))
