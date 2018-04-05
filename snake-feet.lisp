@@ -91,8 +91,9 @@
       :accessor iterator-step)))
 
 (defmethod iterator-range-end? ((ran iterator-range))
-  (declare (optimize (speed 3)))
-  (declare (type iterator-range ran))
+  (declare
+    (type iterator-range ran)
+    (optimize (speed 3)))
   (cond 
     ((< (the number (iterator-step ran)) 0)
       (the boolean
@@ -111,8 +112,9 @@
 ;;       (> (iterator-current ran) (iterator-end ran)))))
 
 (defmethod next ((ran iterator-range))
-  (declare (optimize (speed 3)))
-  (declare (type iterator-range ran))
+  (declare
+    (type iterator-range ran)
+    (optimize (speed 3)))
   (if (iterator-range-end? ran) *stop-iteration*
     (prog1 (the number (iterator-current ran))
       (incf (the number (iterator-current ran))
@@ -177,6 +179,9 @@
      :accessor iterator-cons)))
 
 (defmethod next ((iter iterator-list))
+  (declare 
+    (type iterator-list iter)
+    (optimize (speed 3)))
   (if (null (iterator-cons iter)) *stop-iteration*
     (pop (iterator-cons iter))))
 
@@ -293,15 +298,17 @@
      :accessor iterator-function)))
 
 (defmethod next ((iter iterator-map))
-  (declare (type iterator-map iter))
-  (declare (optimize (speed 3)))
+  (declare
+    (type iterator-map iter)
+    (optimize (speed 3)))
   (let ((element (next (iterator-iterator iter))))
     (if (eq element *stop-iteration*) *stop-iteration*
       (funcall (iterator-function iter) element))))
 
 (defmethod skip ((iter iterator-map))
-  (declare (type iterator-map iter))
-  (declare (optimize (speed 3)))
+  (declare 
+    (type iterator-map iter)
+    (optimize (speed 3)))
   (next (iterator-iterator iter)))
 
 (defmethod copy ((iter iterator-map))
@@ -362,8 +369,9 @@
       :accessor iterator-end)))
 
 (defmethod next ((lis iterator-slice))
-  (declare (type iterator-slice lis))
-  (declare (optimize (speed 3)))
+  (declare 
+    (type iterator-slice lis)
+    (optimize (speed 3)))
   (loop while (< (the integer (iterator-current lis)) (the integer (iterator-start lis))) do
     (skip (iterator-iterator lis))
     (incf (iterator-current lis)))
