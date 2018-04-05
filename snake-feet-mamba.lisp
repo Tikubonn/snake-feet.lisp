@@ -805,19 +805,25 @@
 
 ;; icount 
 
+(defun icount-if-in (function count iter)
+  (declare 
+    (type integer count)
+    (optimize (speed 3)))
+  (the integer
+    (let ((element (next iter)))
+      (if (eq element *stop-iteration*) count 
+        (if (funcall function element) 
+          (the integer (icount-if-in function (1+ count) iter))
+          (the integer (icount-if-in function count iter)))))))
+
 (defun icount-if (function iter)
   (declare 
-    (optimize (speed 3)))  
+    (optimize (speed 3)))
   (the integer
-    (loop with count = 0 with element do
-      (setq element (next iter))
-      if (eq element *stop-iteration*)
-      return count
-      if (funcall function element) do
-      (incf count))))
+    (icount-if-in function 0 iter)))
 
 (defun icount (item iter)
-  (declare
+  (declare 
     (optimize (speed 3)))
   (the integer
     (icount-if 
@@ -825,20 +831,42 @@
         (eql item element))
       iter)))
 
+(compile 'icount-if-in)
 (compile 'icount-if)
 (compile 'icount)
+
+;; (defun icount-if (function iter)
+;;   (declare 
+;;     (optimize (speed 3)))  
+;;   (the integer
+;;     (loop with count = 0 with element do
+;;       (setq element (next iter))
+;;       if (eq element *stop-iteration*)
+;;       return count
+;;       if (funcall function element) do
+;;       (incf count))))
+
+;; (defun icount (item iter)
+;;   (declare
+;;     (optimize (speed 3)))
+;;   (the integer
+;;     (icount-if 
+;;       (lambda (element)
+;;         (eql item element))
+;;       iter)))
+
+;; (compile 'icount-if)
+;; (compile 'icount)
 
 ;; find 
 
 (defun ifind-if (function iter)
   (declare 
-    (optimize (speed 3)))
-  (loop with element do 
-    (setq element (next iter))
-    if (eq element *stop-iteration*)
-    return (values nil nil)
-    if (funcall function element)
-    return (values element t)))
+    (optimize (speed  3)))
+  (let ((element (next iter)))
+    (if (eq element *stop-iteration*) (values nil nil)
+      (if (funcall function element) (values element t)
+        (ifind-if function iter)))))
 
 (defun ifind (item iter)
   (declare 
@@ -849,31 +877,78 @@
     iter))
 
 (compile 'ifind-if)
-(compile 'find)
+(compile 'ifind)
+
+;; (defun ifind-if (function iter)
+;;   (declare 
+;;     (optimize (speed 3)))
+;;   (loop with element do 
+;;     (setq element (next iter))
+;;     if (eq element *stop-iteration*)
+;;     return (values nil nil)
+;;     if (funcall function element)
+;;     return (values element t)))
+
+;; (defun ifind (item iter)
+;;   (declare 
+;;     (optimize (speed 3)))
+;;   (ifind-if 
+;;     (lambda (element)
+;;       (eql item element))
+;;     iter))
+
+;; (compile 'ifind-if)
+;; (compile 'find)
 
 ;; position 
 
-(defun iposition-if (function iter)
-  (declare
+(defun iposition-if-in (function count iter)
+  (declare 
+    (type integer count)
     (optimize (speed 3)))
-  (loop with position = 0 with element do
-    (setq element (next iter))
-    if (eq element *stop-iteration*)
-    return (values nil nil) else 
-    if (funcall function element)
-    return (values position t) else 
-    do (incf position)))
+  (let ((element (next iter)))
+    (if (eq element *stop-iteration*) (values nil nil)
+      (if (funcall function element) (values count t)
+        (iposition-if-in function (1+ count) iter)))))
+
+(defun iposition-if (function iter)
+  (declare 
+    (optimize (speed 3)))
+  (iposition-if-in function 0 iter))
 
 (defun iposition (item iter)
   (declare 
     (optimize (speed 3)))
-  (iposition 
+  (iposition-if 
     (lambda (element)
       (eql item element))
     iter))
 
+(compile 'iposition-if-in)
 (compile 'iposition-if)
 (compile 'iposition)
+
+;; (defun iposition-if (function iter)
+;;   (declare
+;;     (optimize (speed 3)))
+;;   (loop with position = 0 with element do
+;;     (setq element (next iter))
+;;     if (eq element *stop-iteration*)
+;;     return (values nil nil) else 
+;;     if (funcall function element)
+;;     return (values position t) else 
+;;     do (incf position)))
+
+;; (defun iposition (item iter)
+;;   (declare 
+;;     (optimize (speed 3)))
+;;   (iposition 
+;;     (lambda (element)
+;;       (eql item element))
+;;     iter))
+
+;; (compile 'iposition-if)
+;; (compile 'iposition)
 
 ;; reduce 
 
@@ -914,14 +989,18 @@
             (ievery function iter))
           nil)))))
 
+(compile 'ievery)
+
 ;; isome 
 
 (defun isome (function iter)
   (declare 
-    (optimize (speed 3))))
+    (optimize (speed 3)))
   (the boolean 
     (let ((element (next iter)))
       (if (eq element *stop-iteration*) nil
         (if (funcall function element) t
           (the boolean 
             (isome function iter)))))))
+
+(compile 'isome)
