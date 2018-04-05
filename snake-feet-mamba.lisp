@@ -4,7 +4,9 @@
 (defpackage snake-feet-mamba 
   (:use :common-lisp)
   (:shadow :next :skip :copy)
-  (:export :next :skip :copy :iterator :range :repeat :imap :ifilter :iappend :izip :islice :istep :doiterator))
+  (:export :next :skip :copy :iterator :range :repeat :imap :ifilter 
+    :iappend :izip :islice :istep :doiterator :icount-if :icount 
+    :iposition-if :iposition :ifind-if :ifind))
 
 (in-package :snake-feet-mamba)
 
@@ -800,3 +802,65 @@
        (setq ,variable (next ,iter))
        if (eq ,variable *stop-iteration*) return ,result 
        do (progn ,@body))))
+
+;; utils 
+
+(defun icount-if (function iter)
+  (declare 
+    (type function function)
+    (optimize (speed 3)))  
+  (the integer
+    (loop with count = 0 with element do
+      (setq element (next iter))
+      if (eq element *stop-iteration*)
+      return count
+      if (funcall function element) do
+      (incf count))))
+
+(defun icount (item iter)
+  (declare
+    (optimize (speed 3)))
+  (the integer
+    (icount-if 
+      (lambda (element)
+        (eql item element))
+      iter)))
+
+(defun ifind-if (function iter)
+  (declare 
+    (type function function)
+    (optimize (speed 3)))
+  (loop with element do 
+    (setq element (next iter))
+    if (eq element *stop-iteration*)
+    return (values nil nil)
+    if (funcall function element)
+    return (values element t)))
+
+(defun ifind (item iter)
+  (declare 
+    (optimize (speed 3)))
+  (ifind-if 
+    (lambda (element)
+      (eql item element))
+    iter))
+
+(defun iposition-if (function iter)
+  (declare
+    (type function function)
+    (optimize (speed 3)))
+  (loop with position = 0 with element do
+    (setq element (next iter))
+    if (eq element *stop-iteration*)
+    return (values nil nil) else 
+    if (funcall function element)
+    return (values position t) else 
+    do (incf position)))
+
+(defun iposition (item iter)
+  (declare 
+    (optimize (speed 3)))
+  (iposition 
+    (lambda (element)
+      (eql item element))
+    iter))
