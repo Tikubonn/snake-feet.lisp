@@ -688,9 +688,19 @@
   (ievery function (iterator iter)))
 
 (defmethod ievery (function (iter iterator))
-  (loop with element 
-    if (eq (setq element (next (iterator-iterator iter))) *stop-iteration*) return t
-    else unless (funcall function element) return nil))
+  (let ((element (next iter)))
+    (if (eq element *stop-iteration*) t
+      (if (funcall function element)
+        (ievery function iter)
+        nil))))
+
+;; (defmethod ievery (function iter)
+;;   (ievery function (iterator iter)))
+
+;; (defmethod ievery (function (iter iterator))
+;;   (loop with element 
+;;     if (eq (setq element (next (iterator-iterator iter))) *stop-iteration*) return t
+;;     else unless (funcall function element) return nil))
 
 ;; some 
 
@@ -698,9 +708,18 @@
   (isome function (iterator iter)))
 
 (defmethod isome (function (iter iterator))
-  (loop with element 
-    if (eq (setq element (next (iterator-iterator iter))) *stop-iteration*) return nil
-    else when (funcall function element) return t))
+  (let ((element (next iter)))
+    (if (eq element *stop-iteration*) nil
+      (if (funcall function element) t
+        (isome function iter)))))
+
+;; (defmethod isome (function iter)
+;;   (isome function (iterator iter)))
+
+;; (defmethod isome (function (iter iterator))
+;;   (loop with element 
+;;     if (eq (setq element (next (iterator-iterator iter))) *stop-iteration*) return nil
+;;     else when (funcall function element) return t))
 
 ;; reduce
 
@@ -718,7 +737,9 @@
       (element2 (next iter)))
     (if (eq element1 *stop-iteration*) nil
       (if (eq element2 *stop-iteration*) element1
-        (ireduce-in function element1 iter)))))
+        (ireduce-in function 
+          (funcall function element1 element2)
+          iter)))))
 
 ;; findif 
 
@@ -726,10 +747,19 @@
   (ifind-if function (iterator iter)))
 
 (defmethod ifind-if (function (iter iterator))
-  (loop with element
-    until (eq (setq element (next iter)) *stop-iteration*)
-    when (funcall function element)
-    return element))
+  (let ((element (next iter)))
+    (if (eq element *stop-iteration*) (values nil nil)
+      (if (funcall function element) (values element t)
+        (ifind-if function iter)))))
+
+;; (defmethod ifind-if (function iter)
+;;   (ifind-if function (iterator iter)))
+
+;; (defmethod ifind-if (function (iter iterator))
+;;   (loop with element
+;;     until (eq (setq element (next iter)) *stop-iteration*)
+;;     when (funcall function element)
+;;     return element))
 
 ;; find
 
@@ -744,15 +774,27 @@
 
 ;; position if 
 
+(defmethod iposition-if-in (function (count integer) (iter iterator))
+  (let ((element (next iter)))
+    (if (eq element *stop-iteration*) nil
+      (if (funcall function element) count 
+        (iposition-if-in function (1+ count) iter)))))
+
 (defmethod iposition-if (function iter)
   (iposition-if function (iterator iter)))
 
 (defmethod iposition-if (function (iter iterator))
-  (loop with element with index = 0
-    until (eq (setq element (next iter)) *stop-iteration*)
-    when (funcall function element)
-    return index
-    do (incf index)))
+  (iposition-if-in function 0 iter))
+
+;; (defmethod iposition-if (function iter)
+;;   (iposition-if function (iterator iter)))
+
+;; (defmethod iposition-if (function (iter iterator))
+;;   (loop with element with index = 0
+;;     until (eq (setq element (next iter)) *stop-iteration*)
+;;     when (funcall function element)
+;;     return index
+;;     do (incf index)))
 
 ;; position 
 
@@ -767,14 +809,27 @@
 
 ;; icount if 
 
+(defmethod icount-if-in (function (count integer) (iter iterator))
+  (let ((element (next iter)))
+    (if (eq element *stop-iteration*) count 
+      (if (funcall function element)
+        (icount-if-in function (1+ count) iter)
+        (icount-if-in function count iter)))))
+
 (defmethod icount-if (function iter)
-  (icount-if function (iterator  iter)))
+  (icount-if function (iterator iter)))
 
 (defmethod icount-if (function (iter iterator))
-  (loop with element
-    until (eq (setq element (next iter)) *stop-iteration*)
-    when (funcall function element)
-    count t))
+  (icount-if-in function 0 iter))
+
+;; (defmethod icount-if (function iter)
+;;   (icount-if function (iterator  iter)))
+
+;; (defmethod icount-if (function (iter iterator))
+;;   (loop with element
+;;     until (eq (setq element (next iter)) *stop-iteration*)
+;;     when (funcall function element)
+;;     count t))
 
 ;; icount 
 
@@ -784,7 +839,7 @@
 (defmethod icount (item (iter iterator))
   (icount-if 
     (lambda (element)
-      (equal element item))
+      (eql item element))
     iter))
 
 ;; macro utilities
