@@ -66,6 +66,35 @@
         ((eq  (setq element (next iter)) *stop-iteration*))
         (vector-push-extend element sequence)))))
 
+;; functional 
+
+(defclass iterator-function (iterator)
+  ((function
+     :initarg :function
+     :accessor iterator-function)))
+
+(defmethod next ((iter iterator-function))
+  (funcall (iterator-function iter)))
+
+(defmethod copy ((iter iterator-function))
+  (error "iterator-function cannot copy, because I cannot copy inner functions status."))
+
+(defmethod copy-from :after ((iter iterator-function) (iter-from iterator-function))
+  (error "iterator-function cannot copy, because I cannot copy inner functions status."))
+
+;; (defmethod copy ((iter iterator-function))
+;;   (let ((niter (make-instance 'iterator-function)))
+;;     (prog1 niter (copy-from niter iter))))
+
+;; (defmethod copy-from :after ((iter iterator-function) (iter-from iterator-function))
+;;   (setf (iterator-function iter) (iterator-function iter-from)))
+
+(defmethod iterator ((function function))
+  (make-instance 'iterator-function :function function))
+
+(defmethod iterator ((name symbol))
+  (make-instance 'iterator-function :function name))
+
 ;; range
 
 (defclass iterator-range (iterator)

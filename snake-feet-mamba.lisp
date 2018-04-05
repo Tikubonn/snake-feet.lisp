@@ -45,6 +45,58 @@
     (optimize (speed 3)))
   iter)
 
+;; function 
+
+(defstruct 
+  (iterator-function 
+    (:include iterator))
+  (function))
+
+(defmethod iterator ((iter iterator-function))
+  (declare 
+    (type iterator-function iter)
+    (optimize (speed 3)))
+  iter)
+
+(defmethod iterator ((function function))
+  (declare 
+    (type function function)
+    (optimize (speed 3)))
+  (the iterator-function 
+    (ifunction function)))
+
+(defmethod iterator ((name symbol))
+  (declare 
+    (type symbol name)
+    (optimize (speed 3)))
+  (the iterator-function 
+    (ifunction name)))
+
+(defun ifunction (function)
+  (declare 
+    (optimize (speed 3)))
+  (the iterator-function
+    (make-iterator-function
+      :next-function #'next-iterator-function
+      :skip-function #'skip-iterator-function
+      :copy-function #'copy-iterator-function
+      :function function)))
+
+(defun next-iterator-function (iter)
+  (declare 
+    (type iterator-function iter)
+    (optimize (speed 3)))
+  (funcall (iterator-function-function iter)))
+
+(defun skip-iterator-function (iter)
+  (declare 
+    (type iterator-function iter)
+    (optimize (speed 3)))
+  (funcall (iterator-function-function iter)))
+
+(defun copy-iterator-function (iter)
+  (error "iterator-function cannot copy, because I cannot copy inner functions status."))
+
 ;; list 
 
 (defstruct 
@@ -907,8 +959,8 @@
     (type integer count)
     (optimize (speed 3)))
   (let ((element (next iter)))
-    (if (eq element *stop-iteration*) (values nil nil)
-      (if (funcall function element) (values count t)
+    (if (eq element *stop-iteration*) nil ;; when not found
+      (if (funcall function element) count ;; when found 
         (iposition-if-in function (1+ count) iter)))))
 
 (defun iposition-if (function iter)
