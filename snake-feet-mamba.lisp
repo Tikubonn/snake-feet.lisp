@@ -571,6 +571,55 @@
 (compile 'skip-iterator-append)
 (compile 'copy-iterator-append)
 
+;; zip 
+
+(defstruct 
+  (iterator-zip 
+    (:include iterator))
+  (iterators))
+
+(defmethod iterator ((iter iterator-zip))
+  (declare 
+    (type iterator-zip iter)
+    (optimize (speed 3)))
+  iter)
+
+(defun izip (&rest iters)
+  (declare 
+    (optimize (speed 3)))
+  (the iterator-zip
+    (make-iterator-zip
+      :next-function #'next-iterator-zip
+      :skip-function #'skip-iterator-zip
+      :copy-function #'copy-iterator-zip
+      :iterators (mapcar 'iterator iters))))
+
+(defun next-iterator-zip (iter)
+  (loop with element
+    for citer in (iterator-zip-iterators iter) do 
+    (setq element (next citer)) 
+    if (eq element *stop-iteration*) return *stop-iteration*
+    collect element))
+
+(defun skip-iterator-zip (iter)
+  (loop for citer in (iterator-zip-iterators iter) do
+    (skip citer)))
+
+(defun copy-iterator-zip (iter)
+  (declare 
+    (type iterator-zip iter)
+    (optimize (speed 3)))
+  (the iterator-zip
+    (make-iterator-zip 
+      :next-function #'next-iterator-zip
+      :skip-function #'skip-iterator-zip
+      :copy-function #'copy-iterator-zip
+      :iterators (mapcar 'copy (iterator-zip-iterators iter)))))
+
+(compile 'next-iterator-zip)
+(compile 'skip-iterator-zip)
+(compile 'copy-iterator-zip)
+
 ;; macro 
 
 (defmacro doiterator (argument &body body)
