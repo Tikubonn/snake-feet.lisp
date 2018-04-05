@@ -364,6 +364,62 @@
 (compile 'skip-iterator-map)
 (compile 'copy-iterator-map)
 
+;; filter 
+
+(defstruct
+  (iterator-filter
+    (:include iterator))
+  (function nil :type function)
+  (iterator))
+
+(defmethod iterator ((iter iterator-filter))
+  (declare
+    (type iterator-filter iter)
+    (optimize (speed 3)))
+  iter)
+
+(defun ifilter (function iter)
+  (declare 
+    (type function function)
+    (optimize (speed 3)))
+  (the iterator-filter
+    (make-iterator-filter
+      :next-function #'next-iterator-filter
+      :skip-function #'skip-iterator-filter
+      :copy-function #'copy-iterator-filter
+      :function function
+      :iterator (iterator iter))))
+
+(defun next-iterator-filter (iter)
+  (declare
+    (type iterator-filter iter)
+    (optimize (speed 3)))
+  (let ((element (next (iterator-filter-iterator iter))))
+    (if (eq element *stop-iteration*) *stop-iteration*
+      (if (funcall (iterator-filter-function iter) element) element
+        (next-iterator-filter iter)))))
+
+(defun skip-iterator-filter (iter)
+  (declare 
+    (type iterator-filter iter)
+    (optimize (speed 3)))
+  (let ((element (next (iterator-filter-iterator iter))))
+    (unless (eq element *stop-iteration*)
+      (unless (funcall (iterator-filter-function iter) element)
+        (skip-iterator-filter iter)))))
+
+(defun copy-iterator-filter (iter)
+  (declare 
+    (type iterator-filter iter)
+    (optimize (speed 3)))
+  (the iterator-filter
+    (make-iterator-filter
+      :next-function #'next-iterator-filter
+      :skip-function #'skip-iterator-filter
+      :copy-function #'copy-iterator-filter
+      :function (iterator-filter-function iter)
+      :iterator (iterator-filter-iterator iter))))
+
 ;; slice 
 
 (defstruct 
