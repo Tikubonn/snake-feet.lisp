@@ -292,22 +292,12 @@
      :initarg :function
      :accessor iterator-function)))
 
-;; (defclass iterator-map (iterator-iterator)
-;;   ((function
-;;      :initarg :function
-;;      :accessor iterator-function)))
-
 (defmethod next ((iter iterator-map))
   (declare (type iterator-map iter))
   (declare (optimize (speed 3)))
   (let ((element (next (iterator-iterator iter))))
     (if (eq element *stop-iteration*) *stop-iteration*
       (funcall (iterator-function iter) element))))
-
-;; (defmethod next ((iter iterator-map))
-;;   (let ((element (next (iterator-iterator iter))))
-;;     (if (eq element *stop-iteration*) *stop-iteration*
-;;       (funcall (iterator-function iter) element))))
 
 (defmethod skip ((iter iterator-map))
   (declare (type iterator-map iter))
@@ -371,19 +361,6 @@
       :type integer
       :accessor iterator-end)))
 
-;; (defclass iterator-slice (iterator-iterator)
-;;   ((current
-;;      :initform 0
-;;      :accessor iterator-current)
-;;     (start
-;;       :initarg :start
-;;       :initform 0
-;;       :accessor iterator-start)
-;;     (end
-;;       :initarg :end
-;;       :initform 0
-;;       :accessor iterator-end)))
-
 (defmethod next ((lis iterator-slice))
   (declare (type iterator-slice lis))
   (declare (optimize (speed 3)))
@@ -396,17 +373,6 @@
         *stop-iteration*
         (prog1 element
           (incf (iterator-current lis)))))))
-
-;; (defmethod next ((lis iterator-slice))
-;;   (loop while (< (iterator-current lis) (iterator-start lis)) do
-;;     (skip (iterator-iterator lis))
-;;     (incf (iterator-current lis)))
-;;   (if (< (iterator-end lis) (iterator-current lis)) *stop-iteration*
-;;     (let ((element (next (iterator-iterator lis))))
-;;       (if (eq element *stop-iteration*) 
-;;         *stop-iteration*
-;;         (prog1 element
-;;           (incf (iterator-current lis)))))))
 
 (defmethod copy ((iter iterator-slice))
   (let ((niter (make-instance 'iterator-slice)))
