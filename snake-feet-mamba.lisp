@@ -112,6 +112,29 @@
   (vector nil :type vector)
   (index 0 :type integer))
 
+(defun ivector (vec)
+  (declare 
+    (type vector vec)
+    (optimize (speed 3)))
+  (the iterator-vector 
+    (make-iterator-vector 
+      :next-function #'next-iterator-vector 
+      :skip-function #'skip-iterator-vector 
+      :copy-function #'copy-iterator-vector 
+      :vector vec)))
+
+(defmethod iterator ((iter iterator-vector))
+  (declare 
+    (type iterator-vector iter)
+    (optimize (speed 3)))
+  iter)
+
+(defmethod iterator ((vec vector))
+  (declare 
+    (type vector vec)
+    (optimize (speed 3)))
+  (the iterator-vector (ivector vec)))
+
 (defun next-iterator-vector (iter)
   (declare 
     (type iterator-vector iter)
@@ -141,29 +164,6 @@
       :copy-function #'copy-iterator-vector 
       :vector (iterator-vector-vector iter)
       :index (iterator-vector-index iter))))
-
-(defun ivector (vec)
-  (declare 
-    (type vector vec)
-    (optimize (speed 3)))
-  (the iterator-vector 
-    (make-iterator-vector 
-      :next-function #'next-iterator-vector 
-      :skip-function #'skip-iterator-vector 
-      :copy-function #'copy-iterator-vector 
-      :vector vec)))
-
-(defmethod iterator ((iter iterator-vector))
-  (declare 
-    (type iterator-vector iter)
-    (optimize (speed 3)))
-  iter)
-
-(defmethod iterator ((vec vector))
-  (declare 
-    (type vector vec)
-    (optimize (speed 3)))
-  (the iterator-vector (ivector vec)))
 
 ;; range 
 
@@ -235,6 +235,64 @@
       :start (iterator-range-start iter)
       :end (iterator-range-end iter)
       :step (iterator-range-step iter))))
+
+(compile 'iterator-range-end?)
+(compile 'next-iterator-range)
+(compile 'skip-iterator-range)
+(compile 'copy-iterator-range)
+
+;; repeat 
+
+(defstruct 
+  (iterator-repeat
+    (:include iterator))
+  (count 0 :type integer)
+  (element))
+
+(defmethod iterator ((iter iterator-repeat))
+  (declare 
+    (type iterator-repeat iter)
+    (optimize (speed 3)))
+  iter)
+
+(defun repeat (count &optional element)
+  (declare
+    (type integer integer)
+    (optimize (speed 3)))
+  (the iterator-repeat
+    (make-iterator-repeat 
+      :next-function #'next-iterator-repeat
+      :skip-function #'skip-iterator-repeat
+      :copy-function #'copy-iterator-repeat
+      :count count 
+      :element element)))
+
+(defun next-iterator-repeat (iter)
+  (declare 
+    (type iterator-repeat iter)
+    (optimize (speed 3)))
+  (if (zerop (iterator-repeat-count iter)) *stop-iteration*
+    (prog1 (iterator-repeat-element iter)
+      (decf (iterator-repeat-count iter)))))
+
+(defun skip-iterator-repeat (iter)
+  (declare 
+    (type iterator-repeat iter)
+    (optimize (speed 3)))
+  (prog1 nil
+    (decf (iterator-repeat-count iter))))
+
+(defun copy-iterator-repeat (iter)
+  (declare 
+    (type iterator-repeat iter)
+    (optimize (speed 3)))
+  (the iterator-repeat
+    (make-iterator-repeat
+      :next-function #'next-iterator-repeat
+      :skip-function #'skip-iterator-repeat
+      :copy-function #'copy-iterator-repeat
+      :count (iterator-repeat-count iter)
+      :element (iterator-repeat-element iter))))
 
 ;; map 
 
