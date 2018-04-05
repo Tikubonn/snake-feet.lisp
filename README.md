@@ -6,6 +6,25 @@ abuot this iterators characteristic, each iterator elements don't evaluate until
 (but ireverse and isort is slower than other methods, because those collect and cache iteration results.)
 this package is not speedy, because I did not optimize it. if you want, you can find a better library than this one :D
 
+## Performance
+I wrote simple code for performance check. you can read to [here](benchmark.lisp) if you want :D  
+I show performance table on here. on current version (march 5th), snake-feet and snake-feet-mamba are too slow than mapcar and some native functions. I hope that those will be more faster.
+but those saved memory too much than mapcar. of course, it is no wonder, because mapcar return a new sequence.
+
+### CPU performance 
+| code | processor cycles | processor cycles per mapcar |
+---- | ---- | ---- 
+| snake-feet | 523,144,764 | 845.05% |
+| snake-feet-mamba | 105,921,236 | 171.09% |
+| mapcar | **61,906,231** | **100%** |
+
+### Memory performance 
+| code | bytes consed | bytes consed per mapcar |
+---- | ---- | ---- 
+| snake-feet | 5,813,408 | 9.56% |
+| snake-feet-mamba | **393,152** | **0.64%** |
+| mapcar | 60,775,232 | 100% |
+
 ## Methods
 ### Basic Methods
 | Function | Description |
