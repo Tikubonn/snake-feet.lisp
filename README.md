@@ -6,6 +6,20 @@ abuot this iterators characteristic, each iterator elements don't evaluate until
 (but ireverse and isort is slower than other methods, because those collect and cache iteration results.)
 this package is not speedy, because I did not optimize it. if you want, you can find a better library than this one :D
 
+```commonlisp
+(defvar example (iterator '(1 2 3)))
+(next example) ;; 1 
+(defvar saved (copy example))
+(next example) ;; 2
+(next example) ;; 3
+(next example) ;; *stop-iteration*
+(to-list (imap '1+ saved)) ;; (3 4)
+```
+
+### snake-feet-mamba.lisp 
+snake-feet-mamba.lisp is a optimized package. original package is not fast, because it used defclass and defmethod. so I wrote it from scratch without class defining for performance. so its very faster than original package.
+it now developing, so it have not enough function and iterator that compare by original package. please wait for complete.
+
 ## Performance
 I wrote simple code for performance check. you can read to [here](benchmark.lisp) if you want :D  
 I show performance table on here. on current version (march 5th), snake-feet and snake-feet-mamba are too slow than mapcar and some native functions. I hope that those will be more faster.
