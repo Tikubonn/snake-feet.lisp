@@ -513,6 +513,84 @@
 (compile 'skip-iterator-slice)
 (compile 'copy-iterator-slice)
 
+;; step 
+
+(defstruct 
+  (iterator-step 
+    (:include iterator))
+  (current 0 :type integer)
+  (offset 0 :type integer)
+  (step 1 :type integer)
+  (iterator))
+
+(defmethod iterator ((iter iterator-step))
+  (declare
+    (type iterator-step iter)
+    (optimize (speed 3)))
+  iter)
+
+(defun istep (offset step iter)
+  (declare 
+    (type integer offset step)
+    (optimize (speed 3)))
+  (the iterator-step
+    (make-iterator-step
+      :next-function #'next-iterator-step
+      :skip-function #'skip-iterator-step
+      :copy-function #'copy-iterator-step
+      :current 0 
+      :offset offset
+      :step step
+      :iterator iter)))
+
+(defun setup-iterator-step (iter)
+  (declare 
+    (type iterator-step iter)
+    (optimize (speed 3)))
+  (loop while (< (iterator-step-current iter) (iterator-step-offset iter)) do 
+    (skip (iterator-step-iterator iter))
+    (incf (iterator-step-current iter))))
+
+(defun next-iterator-step (iter)
+  (declare 
+    (type iterator-step iter)
+    (optimize (speed 3)))
+  (setup-iterator-step iter)
+  (let ((element (next (iterator-step-iterator iter))))
+    (if (eq element *stop-iteration*) *stop-iteration*
+      (prog1 element
+        (loop repeat (iterator-step-step iter) do 
+          (skip (iterator-step-iterator iter))
+          (incf (iterator-step-current iter)))))))
+
+(defun skip-iterator-step (iter)
+  (declare 
+    (type iterator-step iter)
+    (optimize (speed 3)))
+  (setup-iterator-step iter)
+  (loop repeat (iterator-step-iterator iter) do 
+    (skip (iterator-step-iterator iter))
+    (incf (iterator-step-current iter))))
+
+(defun copy-iterator-step (iter)
+  (declare 
+    (type iterator-step iter)
+    (optimize (speed 3)))
+  (the iterator-step
+    (make-iterator-step
+      :next-function #'next-iterator-step
+      :skip-function #'skip-iterator-step
+      :copy-function #'copy-iterator-step
+      :current (iterator-step-current iter)
+      :offset (iterator-step-offset iter)
+      :step (iterator-step-step iter)
+      :iterator (copy (iterator-step-iterator iter)))))
+
+(compile 'setup-iterator-step)
+(compile 'next-iterator-step)
+(compile 'skip-iterator-step)
+(compile 'copy-iterator-step)
+
 ;; append 
 
 (defstruct 
