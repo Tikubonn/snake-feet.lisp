@@ -6,7 +6,7 @@ abuot this iterators characteristic, each iterator elements don't evaluate until
 (but ireverse and isort is slower than other methods, because those collect and cache iteration results.)
 this package is not speedy, because I did not optimize it. if you want, you can find a better library than this one :D
 
-```commonlisp
+```lisp
 (defvar example (iterator '(1 2 3)))
 (next example) ;; 1 
 (defvar saved (copy example))
