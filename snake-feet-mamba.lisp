@@ -420,6 +420,10 @@
       :function (iterator-filter-function iter)
       :iterator (iterator-filter-iterator iter))))
 
+(compile 'skip-iterator-filter)
+(compile 'next-iterator-filter)
+(compile 'copy-iterator-filter)
+
 ;; slice 
 
 (defstruct 
@@ -508,6 +512,64 @@
 (compile 'next-iterator-slice)
 (compile 'skip-iterator-slice)
 (compile 'copy-iterator-slice)
+
+;; append 
+
+(defstruct 
+  (append-iterator
+    (:include iterator))
+  (iterators))
+
+(defmethod iterator ((iter iterator-append))
+  (declare 
+    (type iterator-append iter)
+    (optimize (speed 3)))
+  iter)
+
+(defun iappend (&rest iters)
+  (declare 
+    (optimize (speed 3)))
+  (the iterator-append
+    (make-iterator-append 
+      :next-function #'next-iterator-append
+      :skip-function #'skip-iterator-append
+      :copy-function #'copy-iterator-append
+      :iterators (mapcar 'iterator iters))))
+
+(defun next-iterator-append (iter)
+  (declare 
+    (type iterator-append iter)
+    (optimize (speed 3)))
+  (if (null (iterator-append-iterators iter)) *stop-iteration*
+    (let ((element (next (car (iterator-append-iterators iter)))))
+      (cond 
+        ((eq element *stop-iteration*)
+          (setf (iterator-append-iterators iter)
+            (cdr (iterator-append-iterators iter))) 
+          (next-iterator-append iter))
+        (t element)))))
+
+(defun skip-iterator-append (iter)
+  (declare 
+    (type iterator-append iter)
+    (optimize (speed 3)))
+  (unless (null (iterator-append-iterators iter))
+    (prog1 nil (next (car (iterator-append-iterators iter))))))
+
+(defun copy-iterator-append (iter)
+  (declare 
+    (type iterator-append iter)
+    (optimize (speed 3)))
+  (the iterator-append
+    (make-iterator-append
+      :next-function #'next-iterator-append
+      :skip-function #'skip-iterator-append
+      :copy-function #'copy-iterator-append
+      :iterators (mapcar 'copy (iterator-append-iterators iter)))))
+
+(compile 'next-iterator-append)
+(compile 'skip-iterator-append)
+(compile 'copy-iterator-append)
 
 ;; macro 
 
