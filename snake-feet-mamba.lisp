@@ -1,12 +1,12 @@
 
-(provide 'snake-feet-more-optimized)
+(provide 'snake-feet-mamba)
 
-(defpackage snake-feet-more-optimized 
+(defpackage snake-feet-mamba 
   (:use :common-lisp)
   (:shadow :next :skip :copy)
   (:export :next :skip :copy :iterator :range :repeat :imap :ifilter :iappend :islice :doiterator))
 
-(in-package :snake-feet-more-optimized)
+(in-package :snake-feet-mamba)
 
 ;; define generic
 
