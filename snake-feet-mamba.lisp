@@ -4,7 +4,7 @@
 (defpackage snake-feet-more-optimized 
   (:use :common-lisp)
   (:shadow :next :skip :copy)
-  (:export :next :skip :copy :iterator :range :imap :islice :doiterator))
+  (:export :next :skip :copy :iterator :range :repeat :imap :ifilter :iappend :islice :doiterator))
 
 (in-package :snake-feet-more-optimized)
 
@@ -257,7 +257,7 @@
 
 (defun repeat (count &optional element)
   (declare
-    (type integer integer)
+    (type integer count)
     (optimize (speed 3)))
   (the iterator-repeat
     (make-iterator-repeat 
@@ -516,7 +516,7 @@
 ;; append 
 
 (defstruct 
-  (append-iterator
+  (iterator-append
     (:include iterator))
   (iterators))
 
