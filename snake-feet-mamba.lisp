@@ -4,7 +4,7 @@
 (defpackage snake-feet-mamba 
   (:use :common-lisp)
   (:shadow :next :skip :copy)
-  (:export :next :skip :copy :iterator :range :repeat :imap :ifilter :iappend :islice :doiterator))
+  (:export :next :skip :copy :iterator :range :repeat :imap :ifilter :iappend :izip :islice :istep :doiterator))
 
 (in-package :snake-feet-mamba)
 
