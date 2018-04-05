@@ -6,7 +6,7 @@
   (:shadow :next :skip :copy)
   (:export :next :skip :copy :iterator :range :repeat :imap :ifilter 
     :iappend :izip :islice :istep :doiterator :icount-if :icount 
-    :iposition-if :iposition :ifind-if :ifind))
+    :iposition-if :iposition :ifind-if :ifind :ireduce :isome :ievery))
 
 (in-package :snake-feet-mamba)
 
