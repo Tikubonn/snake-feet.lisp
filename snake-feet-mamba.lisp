@@ -11,7 +11,7 @@
   (:shadow :next :skip :copy)
   (:export :next :skip :copy :iterator :ilist :iarray :ifunction 
     :range :repeat :imap :ifilter :iappend :izip :islice :istep
-    :icache :ireverse :isort :doiterator :icount-if :icount 
+    :icache :ireverse :isort :ifile :doiterator :icount-if :icount 
     :iposition-if :iposition :ifind-if :ifind :ireduce :isome :ievery))
 
 (in-package :snake-feet-mamba)
