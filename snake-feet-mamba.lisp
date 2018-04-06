@@ -11,8 +11,8 @@
   (:shadow :next :skip :copy)
   (:export :next :skip :copy :iterator :ilist :iarray :ifunction 
     :range :repeat :imap :ifilter :iappend :izip :islice :istep
-    :doiterator :icount-if :icount :iposition-if :iposition 
-    :ifind-if :ifind :ireduce :isome :ievery))
+    :icache :ireverse :isort :doiterator :icount-if :icount 
+    :iposition-if :iposition :ifind-if :ifind :ireduce :isome :ievery))
 
 (in-package :snake-feet-mamba)
 
@@ -828,6 +828,178 @@
       :collection (iterator-cache-collection iter)
       :iterator (iterator-cache-iterator iter))))
 
+(compile 'next-iterator-cache)
+(compile 'skip-iterator-cache)
+(compile 'copy-iterator-cache)
+
+;; reverse 
+
+(defstruct 
+  (iterator-reverse 
+    (:include iterator))
+  (collection nil :type array)
+  (index 0 :type integer)
+  (iterator))
+
+(defmethod iterator ((iter iterator-reverse))
+  (declare 
+    (type iterator-reverse iter)
+    (optimize (speed 3)))
+  iter)
+
+(defun ireverse (iter)
+  (declare 
+    (optimize (speed 3)))
+  (make-iterator-reverse 
+    :next-function #'next-iterator-reverse 
+    :skip-function #'skip-iterator-reverse 
+    :copy-function #'copy-iterator-reverse 
+    :collection (make-array 128 :fill-pointer 0 :adjustable t)
+    :iterator (iterator iter)))
+
+(defun init-iterator-reverse (iter)
+  (declare 
+    (type iterator-reverse iter)
+    (optimize (speed 3)))
+  (let ((element (next (iterator-reverse-iterator iter))))
+    (unless (eq element *stop-iteration*)
+      (vector-push-extend element 
+        (iterator-reverse-collection iter))
+      (init-iterator-reverse iter))))
+
+(defun next-iterator-reverse (iter)
+  (declare 
+    (type iterator-reverse iter)
+    (optimize (speed 3)))
+  (if (= 0 (length (iterator-reverse-collection iter)))
+    (init-iterator-reverse iter))
+  (if (< (iterator-reverse-index iter) (length (iterator-reverse-collection iter)))
+    (prog1 
+      (aref (iterator-reverse-collection iter)
+        (- (length (iterator-reverse-collection iter)) 1
+          (iterator-reverse-index iter)))
+      (incf (iterator-reverse-index iter)))
+    *stop-iteration*))
+
+(defun skip-iterator-reverse (iter)
+  (declare 
+    (type iterator-reverse iter)
+    (optimize (speed 3)))
+  (if (= 0 (length (iterator-reverse-collection iter)))
+    (init-iterator-reverse iter))
+  (the boolean
+    (if (< (iterator-reverse-index iter) (length (iterator-reverse-collection iter)))
+      (prog1 t (incf (iterator-reverse-index iter)))
+      nil))) ;; when reached eoi 
+
+(defun copy-iterator-reverse (iter)
+  (declare 
+    (type iterator-reverse iter)
+    (optimize (speed 3)))
+  (the iterator-reverse
+    (make-iterator-reverse 
+      :next-function #'next-iterator-reverse 
+      :skip-function #'skip-iterator-reverse 
+      :copy-function #'copy-iterator-reverse 
+      :collection (iterator-reverse-collection iter)
+      :index (iterator-reverse-index iter)
+      :iterator (iterator-reverse-iterator iter))))
+
+(compile 'init-iterator-reverse)
+(compile 'next-iterator-reverse)
+(compile 'skip-iterator-reverse)
+(compile 'copy-iterator-reverse)
+
+;; sort 
+
+(defstruct 
+  (iterator-sort 
+    (:include iterator))
+  (collection nil :type array)
+  (index 0 :type integer)
+  (function)
+  (iterator))
+
+(defmethod iterator ((iter iterator-sort))
+  (declare 
+    (type iterator-sort iter)
+    (optimize (speed 3)))
+  iter)
+
+(defun isort (function iter)
+  (declare 
+    (type iterator-sort iter)
+    (optimize (speed 3)))
+  (the iterator-sort
+    (make-iterator-sort 
+      :next-function #'next-iterator-sort
+      :skip-function #'skip-iterator-sort
+      :copy-function #'copy-iterator-sort
+      :collection (make-array 128 :fill-pointer 0 :adjustable t)
+      :function function 
+      :iterator (iterator iter))))
+
+(defun init-iterator-sort-collect (iter)
+  (declare 
+    (type iterator-sort iter)
+    (optimize (speed 3)))
+  (let ((element (next (iterator-sort-iterator iter))))
+    (unless (eq element *stop-iteration*)
+      (vector-push-extend element 
+        (iterator-sort-collection iter))
+      (init-iterator-sort-collect iter))))
+
+(defun init-iterator-sort (iter)
+  (declare 
+    (type iterator iter)
+    (optimize (speed 3)))
+  (init-iterator-sort-collect iter)
+  (sort (iterator-sort-function iter)
+    (iterator-sort-collection)))
+
+(defun next-iterator-sort (iter)
+  (declare 
+    (type iterator iter)
+    (optimize (speed 3)))
+  (if (= 0 (length (iterator-sort-collection iter)))
+    (init-iterator-sort iter))
+  (if (< (iterator-sort-index iter) (length (iterator-sort-collection iter)))
+    (prog1
+      (aref (iterator-sort-collection iter) (iterator-sort-index iter))
+      (incf (iterator-sort-index iter)))
+    *stop-iteration*))
+
+(defun skip-iterator-sort (iter)
+  (declare 
+    (type iterator iter)
+    (optimize (speed 3)))
+  (if (= 0 (length (iterator-sort-collection iter)))
+    (init-iterator-sort iter))
+  (the boolean
+    (if (< (iterator-sort-index iter) (length (iterator-sort-collection iter)))
+      (prog1 t
+        (incf (iterator-sort-index iter)))
+      nil)))
+
+(defun copy-iterator-sort (iter)
+  (declare
+    (type iterator-sort iter)
+    (optimize (speed 3)))
+  (the iterator-sort
+    (make-iterator-sort 
+      :next-function #'next-iterator-sort
+      :skip-function #'skip-iterator-sort
+      :copy-function #'copy-iterator-sort
+      :collection (iterator-sort-collection iter)
+      :function (iterator-sort-function iter)
+      :iterator (iterator-sort-iterator iter))))
+
+(compile 'init-iterator-sort-collect)
+(compile 'init-iterator-sort)
+(compile 'next-iterator-sort)
+(compile 'skip-iterator-sort)
+(compile 'copy-iterator-sort)
+ 
 ;; macro 
 
 (defmacro doiterator (argument &body body)
