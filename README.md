@@ -6,14 +6,51 @@ abuot this iterators characteristic, each iterator elements don't evaluate until
 (but ireverse and isort is slower than other methods, because those collect and cache iteration results.)
 this package is not speedy, because I did not optimize it. if you want, you can find a better library than this one :D
 
+## overview functions
+
+### evaluation strategy
+snake-feets iterator dont evaluate element until necessary.
+in this case, actually range iterator and map iterator will not make and calculate 1000 continuous numbers. because slice iterator dont evaluate values that is out of range.
+
+```lisp 
+(to-array
+  (islice 0 5
+    (imap '1+
+      (range 1000)))) ;; (1 2 3 4 5 6)
+```
+
+### iterator is copyable 
+all iterators can copy with function `copy`  with the exception of some iterators (file iterator and function iterator, because those are cannot copy a status).
+and copied iterator is independent to original iterator.
+if you want copy a iterator that cannot be copied, you can use the cache iterator as proxy.
+
 ```lisp
-(defvar example (iterator '(1 2 3)))
-(next example) ;; 1 
-(defvar saved (copy example))
-(next example) ;; 2
-(next example) ;; 3
-(next example) ;; *stop-iteration*
-(to-list (imap '1+ saved)) ;; (3 4)
+(copy (ifile file)) ;; error 
+(copy (icache (ifile file))) ;; success
+```
+
+### make an iterator from function
+you can make a iterator from function if you want. 
+for this example, made iterator could not stop, so it give value forever, but you can stop iteration with return a value of `*stop-iteration*` in the function.
+
+```lisp
+(iterator
+  (lambda () "generated value!"))
+```
+
+### cache iterator
+this package has supported cache iterator. it is useful. 
+cache iterator record a value from iterator of argument and return it. but if can use  cache, this return a cached value. 
+if this iterator was copied, it share a cache object with exception of position of read.
+be careful, cache iterator consume memory too much than other iterator. 
+because this iterator make a pool that for collect given value from source iterator.
+
+```lisp
+(let* 
+  ((iter (icache (imap '1+ (range 0 1000))))
+   (iter2 (copy iter)))
+  (to-array iter) ;; (1 2 3 ... 1000)
+  (to-array iter2)) ;; (1 2 3 ... 1000) its cached value
 ```
 
 ### snake-feet-mamba.lisp 
@@ -46,7 +83,7 @@ but those saved memory too much than mapcar. of course, it is no wonder, because
 | `(next iterator)` | get a value from iterator. and change iterators status to the next. |
 | `(skip iterator)` | just change iterators status to the next. |
 | `(copy iterator)` | copy an iterator and return. |
-| `(iterator sequence-or-iterator)` | this function make a new iterator by argument. if argument is a sequential, make a new iterator by it by overloaded function. if argument is a iterator, this function just return it. |
+| `(iterator sequence-or-iterator)` | this function make a new iterator by argument. if argument is a sequential, make a new iterator by it by overloaded function. if argument is function, this function make a iterator by it. if argument is a iterator, this function just return it. |
 | `(range start &optional end step)` | this function make a range iterator. range iterator give a continuous number in range. if give function one argument, this make a range iterator that return a number between 0 to first argument. if give function two arguments, this make a range itrator that return a number between `start` to `end`. last, if give function all arguments, this make a range iterator that return a number between `start` to `end`. everytimes, that number increase  by `step`. |
 | `(repeat count &optional element)` | this function make a repeat iterator by arguments. the repeat iterator give a `element` until `count` times. |
 | `(imap function iterator)` | this function make a map iterator by arguments. the map iterator give applied value by function. map iterator like as `(mapcar ...)`. |
