@@ -1000,6 +1000,58 @@
 (compile 'skip-iterator-sort)
 (compile 'copy-iterator-sort)
  
+;; file 
+
+(defstruct 
+  (iterator-file
+    (:include iterator))
+  (file)
+  (read-function))
+
+(defmethod iterator ((iter iterator-file))
+  (declare 
+    (type iterator-file iter)
+    (optimize (speed 3)))
+  iter)
+
+(defun ifile (file &optional (function 'read-char))
+  (declare
+    (type stream file)
+    (optimize (speed 3)))
+  (the iterator-file 
+    (make-iterator-file 
+      :next-function #'next-iterator-file
+      :skip-function #'skip-iterator-file 
+      :copy-function #'copy-iterator-file 
+      :read-function function
+      :file file)))
+
+(defconstant *iterator-file-eof*
+  (make-symbol "*iterator-file-eof*"))
+
+(defun next-iterator-file (iter)
+  (declare 
+    (type iterator-file iter)
+    (optimize (speed 3)))
+  (let ((char (funcall (iterator-file-read-function iter) nil *iterator-file-eof*)))
+    (if (eq char *iterator-file-eof*) *stop-iteration*
+      char)))
+
+(defun skip-iterator-file (iter)
+  (declare
+    (type iterator-file iter)
+    (optimize (speed 3)))
+  (the boolean
+    (let ((char (funcall (iterator-file-read-function iter) nil *iterator-file-eof*)))
+      (if (eq char *iterator-file-eof*) nil t))))
+
+(defun copy-iterator-file (iter)
+  (error "cannot copy an iterator-file, because it cannot copy a file status."))
+
+(compile 'next-iterator-file)
+(compile 'skip-iterator-file)
+(compile 'copy-iterator-file)
+
 ;; macro 
 
 (defmacro doiterator (argument &body body)
