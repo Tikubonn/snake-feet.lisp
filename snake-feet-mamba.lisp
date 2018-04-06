@@ -1,3 +1,8 @@
+;; Copyright (c) 2018 tikubonn.
+;; Released under the MIT license 
+;; http://opensource.org/licenses/mitlicense.php 
+
+;; package 
 
 (provide 'snake-feet-mamba)
 
