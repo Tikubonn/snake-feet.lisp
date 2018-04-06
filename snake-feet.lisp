@@ -44,6 +44,9 @@
 (defmethod iterator ((iter iterator))
   iter)
 
+(defmethod skip ((iter iterator))
+  (not (eq (next iter) *stop-iteration*)))
+
 (defmethod to-list ((iter iterator))
   (let ((top nil) (bottom nil))
     (do 
@@ -82,13 +85,6 @@
 (defmethod copy-from :after ((iter iterator-function) (iter-from iterator-function))
   (error "iterator-function cannot copy, because I cannot copy inner functions status."))
 
-;; (defmethod copy ((iter iterator-function))
-;;   (let ((niter (make-instance 'iterator-function)))
-;;     (prog1 niter (copy-from niter iter))))
-
-;; (defmethod copy-from :after ((iter iterator-function) (iter-from iterator-function))
-;;   (setf (iterator-function iter) (iterator-function iter-from)))
-
 (defmethod iterator ((function function))
   (make-instance 'iterator-function :function function))
 
@@ -123,22 +119,13 @@
   (declare
     (type iterator-range ran)
     (optimize (speed 3)))
-  (cond 
-    ((< (the number (iterator-step ran)) 0)
-      (the boolean
-        (< (the number (iterator-current ran))
-          (the number (iterator-end ran)))))
-    ((> (the number (iterator-step ran)) 0)
-      (the boolean 
-        (> (the number (iterator-current ran)) 
-          (the number (iterator-end ran)))))))
-
-;; (defmethod iterator-range-end? ((ran iterator-range))
-;;   (cond 
-;;     ((< (iterator-step ran) 0)
-;;       (< (iterator-current ran) (iterator-end ran)))
-;;     ((> (iterator-step ran) 0)
-;;       (> (iterator-current ran) (iterator-end ran)))))
+  (the boolean
+    (cond 
+      ((= (iterator-step ran) 0) nil)
+      ((< (iterator-step ran) 0)
+        (< (iterator-current ran) (iterator-end ran)))
+      ((> (iterator-step ran) 0)
+        (> (iterator-current ran) (iterator-end ran))))))
 
 (defmethod next ((ran iterator-range))
   (declare
@@ -149,11 +136,15 @@
       (incf (the number (iterator-current ran))
         (the number (iterator-step ran))))))
 
-;; (defmethod next ((ran iterator-range))
-;;   (if (iterator-range-end? ran) *stop-iteration*
-;;     (prog1 (iterator-current ran)
-;;       (incf (iterator-current ran)
-;;         (iterator-step ran)))))
+(defmethod skip ((ran iterator-range))
+  (declare 
+    (type iterator-range ran)
+    (optimize (speed 3)))
+  (the boolean
+    (if (iterator-range-end? ran) nil ;; when reached eoi
+      (prog1 t 
+        (incf (iterator-range-current ran)
+          (iterator-range-step ran))))))
 
 (defmethod copy ((iter iterator-range))
   (let ((niter (make-instance 'iterator-range)))
@@ -184,10 +175,25 @@
      :accessor iterator-element)))
 
 (defmethod next ((iter iterator-repeat))
-  (if (> 0 (iterator-count iter)) *stop-iteration*
+  (declare 
+    (type iterator-repeat iter)
+    (optimize (speed 3)))
+  (if (<= (iterator-count iter) 0) *stop-iteration*
     (prog1 (iterator-element iter)
       (decf (iterator-count iter)))))
 
+;; (defmethod next ((iter iterator-repeat))
+;;   (if (> 0 (iterator-count iter)) *stop-iteration*
+;;     (prog1 (iterator-element iter)
+;;       (decf (iterator-count iter)))))
+
+(defmethod skip ((iter iterator-repeat))
+  (declare 
+    (type iterator-repeat iter)
+    (optimize (speed 3)))
+  (the boolean
+    (<= (iterator-count iter) 0)))
+  
 (defmethod copy ((iter iterator-repeat))
   (let ((niter (make-instance 'iterator-repeat)))
     (prog1 niter (copy-from niter iter))))
@@ -213,6 +219,13 @@
     (optimize (speed 3)))
   (if (null (iterator-cons iter)) *stop-iteration*
     (pop (iterator-cons iter))))
+
+(defmethod skip ((iter iterator-list))
+  (declare 
+    (type iterator-list iter)
+    (optimize (speed 3)))
+  (the boolean
+    (if (null (iterator-cons iter)) nil t)))
 
 (defmethod to-list ((iter iterator-list))
   (copy-list (iterator-cons iter)))
@@ -260,10 +273,21 @@
       :initform 0
       :accessor iterator-index)))
 
-(defmethod next ((lis iterator-vector))
-  (if (<= (length (iterator-vector lis)) (iterator-index lis)) *stop-iteration*
-    (prog1 (aref (iterator-vector lis) (iterator-index lis))
-      (incf (iterator-index lis)))))
+(defmethod next ((iter iterator-vector))
+  (declare 
+    (type iterator-vector iter)
+    (optimize (speed 3)))
+  (if (<= (length (iterator-vector iter)) (iterator-index iter)) *stop-iteration*
+    (prog1 (aref (iterator-vector iter) (iterator-index iter))
+      (incf (iterator-index iter)))))
+
+(defmethod skip ((iter iterator-vector))
+  (declare 
+    (type iterator-vector iter)
+    (optimize (speed 3)))
+  (the boolean
+    (< (iterator-index iter) 
+      (length (iterator-vector iter)))))
 
 (defmethod to-array ((iter iterator-vector))
   (subseq (iterator-vector iter) (iterator-index iter)))
@@ -288,10 +312,17 @@
      :accessor iterator-iterator)))
 
 (defmethod next ((iter iterator-iterator))
-  (let ((element (next (iterator-iterator iter))))
-    (if (eq element *stop-iteration*)
-      *stop-iteration*
-      element)))
+  (declare 
+    (type iterator-iterator iter)
+    (optimize (speed 3)))
+  (next (iterator-iterator iter)))
+
+(defmethod skip ((iter iterator-iterator))
+  (declare 
+    (type iterator-iterator iter)
+    (optimize (speed 3)))
+  (the boolean 
+    (skip (iterator-iterator iter))))
 
 (defmethod copy ((iter iterator-iterator))
   (let ((niter (make-instance 'iterator-iterator)))
@@ -334,11 +365,11 @@
     (if (eq element *stop-iteration*) *stop-iteration*
       (funcall (iterator-function iter) element))))
 
-(defmethod skip ((iter iterator-map))
-  (declare 
-    (type iterator-map iter)
-    (optimize (speed 3)))
-  (next (iterator-iterator iter)))
+;; (defmethod skip ((iter iterator-map))
+;;   (declare 
+;;     (type iterator-map iter)
+;;     (optimize (speed 3)))
+;;   (next (iterator-iterator iter)))
 
 (defmethod copy ((iter iterator-map))
   (let ((niter (make-instance 'iterator-map)))
@@ -397,19 +428,47 @@
       :type integer
       :accessor iterator-end)))
 
-(defmethod next ((lis iterator-slice))
+(defun setup-iterator-slice (iter)
   (declare 
-    (type iterator-slice lis)
+    (type iterator-slice iter)
     (optimize (speed 3)))
-  (loop while (< (the integer (iterator-current lis)) (the integer (iterator-start lis))) do
-    (skip (iterator-iterator lis))
-    (incf (iterator-current lis)))
-  (if (< (the integer (iterator-end lis)) (the integer (iterator-current lis))) *stop-iteration*
-    (let ((element (next (iterator-iterator lis))))
-      (if (eq element *stop-iteration*) 
-        *stop-iteration*
-        (prog1 element
-          (incf (iterator-current lis)))))))
+  (loop while (< (iterator-current iter) (iterator-start iter)) do 
+    (skip (iterator-iterator iter))
+    (incf (iterator-current iter))))
+
+(defmethod next ((iter iterator-slice))
+  (declare 
+    (type iterator-slice iter)
+    (optimize (speed 3)))
+  (setup-iterator-slice iter)
+  (if (< (iterator-end iter) (iterator-current iter)) *stop-iteration*
+    (let ((element (next (iterator-iterator iter))))
+      (if (eq element *stop-iteration*) *stop-iteration*
+        (prog1 element 
+          (incf (iterator-current iter)))))))
+
+(defmethod skip ((iter iterator-slice))
+  (declare 
+    (type iterator-slice iter)
+    (optimize (speed 3)))
+  (setup-iterator-slice iter)
+  (the boolean 
+    (if (< (iterator-end iter) (iterator-current iter)) nil 
+      (skip (iterator-iterator iter)))))
+
+;; (defmethod next ((lis iterator-slice))
+;;   (declare 
+;;     (type iterator-slice lis)
+;;     (optimize (speed 3)))
+;;   (loop while (< (the integer (iterator-current lis)) (the integer (iterator-start lis))) do
+;;     (skip (iterator-iterator lis))
+;;     (incf (iterator-current lis)))
+;;   (if (< (the integer (iterator-end lis)) (the integer (iterator-current lis))) *stop-iteration*
+;;     (let ((element (next (iterator-iterator lis))))
+;;       (if (eq element *stop-iteration*) 
+;;         *stop-iteration*
+;;         (prog1 element
+;;           (incf (iterator-current lis)))))))
 
 (defmethod copy ((iter iterator-slice))
   (let ((niter (make-instance 'iterator-slice)))
@@ -434,32 +493,56 @@
      :initform nil
      :accessor iterator-iterators)))
 
-(defmethod current-iterator ((iter iterator-append))
-  (car (iterator-iterators iter)))
+;; (defmethod current-iterator ((iter iterator-append))
+;;   (car (iterator-iterators iter)))
 
-(defmethod next-current-iterator ((iter iterator-append))
-  (next (current-iterator iter)))
+;; (defmethod next-current-iterator ((iter iterator-append))
+;;   (next (current-iterator iter)))
 
-(defmethod skip-current-iterator ((iter iterator-append))
-  (skip (current-iterator iter)))
+;; (defmethod skip-current-iterator ((iter iterator-append))
+;;   (skip (current-iterator iter)))
 
-(defmethod select-next-iterator ((iter iterator-append))
-  (setf (iterator-iterators iter)
-    (cdr (iterator-iterators iter))))
+;; (defmethod select-next-iterator ((iter iterator-append))
+;;   (setf (iterator-iterators iter)
+;;     (cdr (iterator-iterators iter))))
 
 (defmethod next ((iter iterator-append))
-  (loop with element
-    unless (iterator-iterators iter) return *stop-iteration*
-    if (eq (setq element (next-current-iterator iter)) *stop-iteration*)
-    do (select-next-iterator iter)
-    else return element))
+  (declare 
+    (type iterator-append iter)
+    (optimize (speed 3)))
+  (if (null (iterator-iterators iter)) *stop-iteration*
+    (let ((element (next (car (iterator-iterators iter)))))
+      (if (eq element *stop-iteration*)
+        (progn 
+          (setf (iterator-iterators iter)
+            (cdr (iterator-iterators iter)))
+          (next iter))
+        element))))
 
 (defmethod skip ((iter iterator-append))
-  (loop with element
-    unless (iterator-iterators iter) return *stop-iteration*
-    if (eq (setq element (skip-current-iterator iter)) *stop-iteration*)
-    do (select-next-iterator iter)
-    else return element))
+  (declare 
+    (type iterator-append iter)
+    (optimize (speed 3)))
+  (if (null (iterator-iterators iter)) nil
+    (if (skip (car (iterator-iterators iter))) t
+      (progn 
+        (setf (iterator-iterators iter)
+          (cdr (iterator-iterators iter)))
+        (skip iter)))))
+
+;; (defmethod next ((iter iterator-append))
+;;   (loop with element
+;;     unless (iterator-iterators iter) return *stop-iteration*
+;;     if (eq (setq element (next-current-iterator iter)) *stop-iteration*)
+;;     do (select-next-iterator iter)
+;;     else return element))
+
+;; (defmethod skip ((iter iterator-append))
+;;   (loop with element
+;;     unless (iterator-iterators iter) return *stop-iteration*
+;;     if (eq (setq element (skip-current-iterator iter)) *stop-iteration*)
+;;     do (select-next-iterator iter)
+;;     else return element))
 
 (defmethod copy ((iter iterator-append))
   (let ((niter (make-instance 'iterator-append)))
@@ -481,15 +564,33 @@
 
 (defmethod next ((iter iterator-zip))
   (loop with element 
-    for iter in (iterator-iterator iter) do
+    for iter in (iterator-iterators iter) do
     (setq element (next iter))
     if (eq element *stop-iteration*)
     return *stop-iteration*
     else collect element))
 
+(defun skip-iterator-zip-in (iters)
+  (declare 
+    (type list iters)
+    (optimize (speed 3)))
+  (the boolean
+    (if (null iters) t
+      (if (skip iters)
+        (the boolean (skip-iterator-zip-in (cdr iters)))
+        nil))))
+
 (defmethod skip ((iter iterator-zip))
-  (loop for iter in (iterator-iterator iter) do 
-    (skip iter)))
+  (declare 
+    (type iterator-zip iter)
+    (optimize (speed 3)))
+  (the boolean
+    (skip-iterator-zip-in 
+      (iterator-iterators iter))))
+
+;; (defmethod skip ((iter iterator-zip))
+;;   (loop for iter in (iterator-iterator iter) do 
+;;     (skip iter)))
 
 (defmethod copy ((iter iterator-zip))
   (let ((niter (make-instance 'iterator-zip)))
@@ -731,14 +832,6 @@
         (ievery function iter)
         nil))))
 
-;; (defmethod ievery (function iter)
-;;   (ievery function (iterator iter)))
-
-;; (defmethod ievery (function (iter iterator))
-;;   (loop with element 
-;;     if (eq (setq element (next (iterator-iterator iter))) *stop-iteration*) return t
-;;     else unless (funcall function element) return nil))
-
 ;; some 
 
 (defmethod isome (function iter)
@@ -749,14 +842,6 @@
     (if (eq element *stop-iteration*) nil
       (if (funcall function element) t
         (isome function iter)))))
-
-;; (defmethod isome (function iter)
-;;   (isome function (iterator iter)))
-
-;; (defmethod isome (function (iter iterator))
-;;   (loop with element 
-;;     if (eq (setq element (next (iterator-iterator iter))) *stop-iteration*) return nil
-;;     else when (funcall function element) return t))
 
 ;; reduce
 
@@ -789,15 +874,6 @@
       (if (funcall function element) (values element t)
         (ifind-if function iter)))))
 
-;; (defmethod ifind-if (function iter)
-;;   (ifind-if function (iterator iter)))
-
-;; (defmethod ifind-if (function (iter iterator))
-;;   (loop with element
-;;     until (eq (setq element (next iter)) *stop-iteration*)
-;;     when (funcall function element)
-;;     return element))
-
 ;; find
 
 (defmethod ifind (item iter)
@@ -822,16 +898,6 @@
 
 (defmethod iposition-if (function (iter iterator))
   (iposition-if-in function 0 iter))
-
-;; (defmethod iposition-if (function iter)
-;;   (iposition-if function (iterator iter)))
-
-;; (defmethod iposition-if (function (iter iterator))
-;;   (loop with element with index = 0
-;;     until (eq (setq element (next iter)) *stop-iteration*)
-;;     when (funcall function element)
-;;     return index
-;;     do (incf index)))
 
 ;; position 
 
@@ -858,15 +924,6 @@
 
 (defmethod icount-if (function (iter iterator))
   (icount-if-in function 0 iter))
-
-;; (defmethod icount-if (function iter)
-;;   (icount-if function (iterator  iter)))
-
-;; (defmethod icount-if (function (iter iterator))
-;;   (loop with element
-;;     until (eq (setq element (next iter)) *stop-iteration*)
-;;     when (funcall function element)
-;;     count t))
 
 ;; icount 
 
