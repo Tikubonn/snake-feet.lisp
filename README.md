@@ -4,19 +4,6 @@ this package support some functions that same as popular one. `map`, `filter`, `
 if you want check supported functions, you can read the Methods topic.
 abuot this iterators characteristic, each iterator elements don't evaluate until necessary, and don't make a new sequence everytimes. so some cases, you can saving memory. maybe :D 
 (but ireverse and isort is slower than other methods, because those collect and cache iteration results.)
-~~this package is not speedy, because I did not optimize it. if you want, you can find a better library than this one :D~~
-snake-feet-mamba.lisp was released that is optimized package :D
-
-```lisp
-(defvar example (iterator '(1 2 3)))
-(next example) ;; 1
-
-(defvar copied (copy example))
-(next example) ;; 2
-(next example) ;; 3
-(next example) ;; *stop-iteration*
-(to-list (imap '+1 copied)) ;; (3 4)
-```
 
 ## overview functions
 
