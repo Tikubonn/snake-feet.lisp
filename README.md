@@ -15,7 +15,7 @@ in this case, actually range iterator and map iterator will not make and calcula
 (to-array
   (islice 0 5
     (imap '1+
-      (range 1000)))) ;; (1 2 3 4 5 6)
+      (range 1000)))) ;; #(1 2 3 4 5 6)
 ```
 
 ### iterator is copyable 
