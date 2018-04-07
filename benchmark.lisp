@@ -1,6 +1,6 @@
 
 (load "snake-feet.lisp")
-(load "snake-feet-mamba.lisp")
+(load "mamba-feet.lisp")
 
 (defvar lis 
   (loop for n from 0 below 1000 collect n))
@@ -15,13 +15,13 @@
               (snake-feet:iterator lis))))))))
 
 (defun test2 ()
-  (snake-feet-mamba:doiterator 
+  (mamba-feet:doiterator 
     (element 
-      (snake-feet-mamba:islice 100 900
-        (snake-feet-mamba:imap #'1+
-          (snake-feet-mamba:imap #'1+
-            (snake-feet-mamba:imap #'1+
-              (snake-feet-mamba:iterator lis))))))))
+      (mamba-feet:islice 100 900
+        (mamba-feet:imap #'1+
+          (mamba-feet:imap #'1+
+            (mamba-feet:imap #'1+
+              (mamba-feet:iterator lis))))))))
 
 (defun test3 ()
   (subseq
