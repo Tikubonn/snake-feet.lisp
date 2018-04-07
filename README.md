@@ -47,7 +47,7 @@ because this iterator make a pool that for collect given value from source itera
 
 ```lisp
 (let* 
-  ((iter (icache (imap '1+ (range 0 1000))))
+  ((iter (icache (imap '1+ (irange 0 1000))))
    (iter2 (copy iter)))
   (to-array iter) ;; (1 2 3 ... 1000)
   (to-array iter2)) ;; (1 2 3 ... 1000) its cached value
@@ -84,8 +84,8 @@ but those saved memory too much than mapcar. of course, it is no wonder, because
 | `(iskip iterator)` | just change iterators status to the next. |
 | `(icopy iterator)` | copy an iterator and return. |
 | `(iterator sequence-or-iterator)` | this function make a new iterator by argument. if argument is a sequential, make a new iterator by it by overloaded function. if argument is function, this function make a iterator by it. if argument is a iterator, this function just return it. |
-| `(range start &optional end step)` | this function make a range iterator. range iterator give a continuous number in range. if give function one argument, this make a range iterator that return a number between 0 to first argument. if give function two arguments, this make a range itrator that return a number between `start` to `end`. last, if give function all arguments, this make a range iterator that return a number between `start` to `end`. everytimes, that number increase  by `step`. |
-| `(repeat count &optional element)` | this function make a repeat iterator by arguments. the repeat iterator give a `element` until `count` times. |
+| `(irange start &optional end step)` | this function make a range iterator. range iterator give a continuous number in range. if give function one argument, this make a range iterator that return a number between 0 to first argument. if give function two arguments, this make a range itrator that return a number between `start` to `end`. last, if give function all arguments, this make a range iterator that return a number between `start` to `end`. everytimes, that number increase  by `step`. |
+| `(irepeat count &optional element)` | this function make a repeat iterator by arguments. the repeat iterator give a `element` until `count` times. |
 | `(imap function iterator)` | this function make a map iterator by arguments. the map iterator give applied value by function. map iterator like as `(mapcar ...)`. |
 | `(ifilter function iterator)` | this function make a filter iterator by arguments. the filter iterator give a value that trued by function from iterator. filter iterator like as `(filter ...)`. |
 | `(islice start end iterator)` | this function make a slice iterator by arguments. the slice iterator give a element that position is between `start` to `end`. this function like as `(subseq ...)`. |
