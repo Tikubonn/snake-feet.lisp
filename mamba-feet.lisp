@@ -4,9 +4,9 @@
 
 ;; package 
 
-(provide 'snake-feet-mamba)
+(provide 'mamba-feet)
 
-(defpackage snake-feet-mamba 
+(defpackage mamba-feet 
   (:use :common-lisp)
   (:shadow :next :skip :copy)
   (:export :next :skip :copy :iterator :ilist :iarray :ifunction 
@@ -14,7 +14,7 @@
     :icache :ireverse :isort :ifile :doiterator :icount-if :icount 
     :iposition-if :iposition :ifind-if :ifind :ireduce :isome :ievery))
 
-(in-package :snake-feet-mamba)
+(in-package :mamba-feet)
 
 ;; define generic
 
