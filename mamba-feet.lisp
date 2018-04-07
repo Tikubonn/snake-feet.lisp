@@ -9,7 +9,7 @@
 (defpackage mamba-feet 
   (:use :common-lisp)
   (:shadow :next :skip :copy)
-  (:export :next :skip :copy :iterator :ilist :iarray :ifunction 
+  (:export :next :skip :copy :iterator :ilist :iarray :ifunction :*stop-iteration*
     :range :repeat :imap :ifilter :iappend :izip :islice :istep
     :icache :ireverse :isort :ifile :doiterator :icount-if :icount 
     :iposition-if :iposition :ifind-if :ifind :ireduce :isome :ievery))
@@ -27,8 +27,8 @@
   (skip-function nil :type function)
   (copy-function nil :type function))
 
-(defconstant +stop-iteration+
-  (make-symbol "+stop-iteration+"))
+(defvar *stop-iteration*
+  (make-symbol "*stop-iteration*"))
 
 (defun next (iter)
   (declare 
@@ -103,7 +103,7 @@
     (optimize (speed 3)))
   (the boolean
     (let ((element (funcall (iterator-function-function iter))))
-      (if (eq element +stop-iteration+) nil t))))
+      (if (eq element *stop-iteration*) nil t))))
 
 (defun copy-iterator-function (iter)
   (error "iterator-function cannot copy, because I cannot copy inner functions status."))
@@ -142,7 +142,7 @@
   (declare 
     (type iterator-list iter)
     (optimize (speed 3)))
-  (if (null (iterator-list-node iter)) +stop-iteration+
+  (if (null (iterator-list-node iter)) *stop-iteration*
     (prog1 (car (iterator-list-node iter))
       (setf (iterator-list-node iter)
         (cdr (iterator-list-node iter))))))
@@ -208,7 +208,7 @@
   (if (< (iterator-array-index iter) (length (iterator-array-array iter)))
     (prog1 (aref (iterator-array-array iter) (iterator-array-index iter))
       (incf (iterator-array-index iter)))
-    +stop-iteration+))
+    *stop-iteration*))
 
 (defun skip-iterator-array (iter)
   (declare 
@@ -274,7 +274,7 @@
   (declare 
     (type iterator-range iter)
     (optimize (speed 3)))
-  (if (iterator-range-end? iter) +stop-iteration+
+  (if (iterator-range-end? iter) *stop-iteration*
     (prog1 (iterator-range-current iter)
       (incf (iterator-range-current iter)
         (iterator-range-step iter)))))
@@ -338,7 +338,7 @@
   (declare 
     (type iterator-repeat iter)
     (optimize (speed 3)))
-  (if (zerop (iterator-repeat-count iter)) +stop-iteration+
+  (if (zerop (iterator-repeat-count iter)) *stop-iteration*
     (prog1 (iterator-repeat-element iter)
       (decf (iterator-repeat-count iter)))))
 
@@ -393,7 +393,7 @@
     (type iterator-map iter)
     (optimize (speed 3)))
   (let ((element (next (iterator-map-iterator iter))))
-    (if (eq element +stop-iteration+) +stop-iteration+
+    (if (eq element *stop-iteration*) *stop-iteration*
       (funcall (iterator-map-function iter) element))))
 
 (defun skip-iterator-map (iter)
@@ -451,7 +451,7 @@
     (type iterator-filter iter)
     (optimize (speed 3)))
   (let ((element (next (iterator-filter-iterator iter))))
-    (if (eq element +stop-iteration+) +stop-iteration+
+    (if (eq element *stop-iteration*) *stop-iteration*
       (if (funcall (iterator-filter-function iter) element) element
         (next-iterator-filter iter)))))
 
@@ -460,7 +460,7 @@
     (type iterator-filter iter)
     (optimize (speed 3)))
   (let ((element (next (iterator-filter-iterator iter))))
-    (if (eq element +stop-iteration+) nil ;; when reached eoi
+    (if (eq element *stop-iteration*) nil ;; when reached eoi
       (if (funcall (iterator-filter-function iter) element) t
         (skip-iterator-filter iter)))))
 
@@ -523,7 +523,7 @@
     (optimize (speed 3)))
   (setup-iterator-slice iter)
   (let ((element (next (iterator-slice-iterator iter))))
-    (if (eq element +stop-iteration+) +stop-iteration+
+    (if (eq element *stop-iteration*) *stop-iteration*
       (prog1 element 
         (incf (iterator-slice-current iter))))))
 
@@ -600,7 +600,7 @@
     (optimize (speed 3)))
   (setup-iterator-step iter)
   (let ((element (next (iterator-step-iterator iter))))
-    (if (eq element +stop-iteration+) +stop-iteration+
+    (if (eq element *stop-iteration*) *stop-iteration*
       (prog1 element
         (loop repeat (iterator-step-step iter) do 
           (skip (iterator-step-iterator iter))
@@ -674,10 +674,10 @@
   (declare 
     (type iterator-append iter)
     (optimize (speed 3)))
-  (if (null (iterator-append-iterators iter)) +stop-iteration+
+  (if (null (iterator-append-iterators iter)) *stop-iteration*
     (let ((element (next (car (iterator-append-iterators iter)))))
       (cond 
-        ((eq element +stop-iteration+)
+        ((eq element *stop-iteration*)
           (setf (iterator-append-iterators iter)
             (cdr (iterator-append-iterators iter))) 
           (next-iterator-append iter))
@@ -737,7 +737,7 @@
   (loop with element
     for citer in (iterator-zip-iterators iter) do 
     (setq element (next citer)) 
-    if (eq element +stop-iteration+) return +stop-iteration+
+    if (eq element *stop-iteration*) return *stop-iteration*
     collect element))
 
 (defun skip-iterator-zip (iter)
@@ -797,7 +797,7 @@
     (prog1 (aref (iterator-cache-collection iter) (iterator-cache-index iter))
       (incf (iterator-cache-index iter)))
     (let ((element (next (iterator-cache-iterator iter))))
-      (if (eq element +stop-iteration+) +stop-iteration+
+      (if (eq element *stop-iteration*) *stop-iteration*
         (prog1 element 
           (vector-push-extend element 
             (iterator-cache-collection iter)))))))
@@ -862,7 +862,7 @@
     (type iterator-reverse iter)
     (optimize (speed 3)))
   (let ((element (next (iterator-reverse-iterator iter))))
-    (unless (eq element +stop-iteration+)
+    (unless (eq element *stop-iteration*)
       (vector-push-extend element 
         (iterator-reverse-collection iter))
       (init-iterator-reverse iter))))
@@ -879,7 +879,7 @@
         (- (length (iterator-reverse-collection iter)) 1
           (iterator-reverse-index iter)))
       (incf (iterator-reverse-index iter)))
-    +stop-iteration+))
+    *stop-iteration*))
 
 (defun skip-iterator-reverse (iter)
   (declare 
@@ -944,7 +944,7 @@
     (type iterator-sort iter)
     (optimize (speed 3)))
   (let ((element (next (iterator-sort-iterator iter))))
-    (unless (eq element +stop-iteration+)
+    (unless (eq element *stop-iteration*)
       (vector-push-extend element 
         (iterator-sort-collection iter))
       (init-iterator-sort-collect iter))))
@@ -967,7 +967,7 @@
     (prog1
       (aref (iterator-sort-collection iter) (iterator-sort-index iter))
       (incf (iterator-sort-index iter)))
-    +stop-iteration+))
+    *stop-iteration*))
 
 (defun skip-iterator-sort (iter)
   (declare 
@@ -1026,15 +1026,15 @@
       :read-function function
       :file file)))
 
-(defconstant +iterator-file-eof+
-  (make-symbol "+iterator-file-eof+"))
+(defvar *iterator-file-eof*
+  (make-symbol "*iterator-file-eof*"))
 
 (defun next-iterator-file (iter)
   (declare 
     (type iterator-file iter)
     (optimize (speed 3)))
-  (let ((char (funcall (iterator-file-read-function iter) nil +iterator-file-eof+)))
-    (if (eq char +iterator-file-eof+) +stop-iteration+
+  (let ((char (funcall (iterator-file-read-function iter) nil *iterator-file-eof*)))
+    (if (eq char *iterator-file-eof*) *stop-iteration*
       char)))
 
 (defun skip-iterator-file (iter)
@@ -1042,8 +1042,8 @@
     (type iterator-file iter)
     (optimize (speed 3)))
   (the boolean
-    (let ((char (funcall (iterator-file-read-function iter) nil +iterator-file-eof+)))
-      (if (eq char +iterator-file-eof+) nil t))))
+    (let ((char (funcall (iterator-file-read-function iter) nil *iterator-file-eof*)))
+      (if (eq char *iterator-file-eof*) nil t))))
 
 (defun copy-iterator-file (iter)
   (error "cannot copy an iterator-file, because it cannot copy a file status."))
@@ -1062,7 +1062,7 @@
       (iter (gensym)))
     `(loop with ,iter = (iterator ,formula) with ,variable do
        (setq ,variable (next ,iter))
-       if (eq ,variable +stop-iteration+) return ,result 
+       if (eq ,variable *stop-iteration*) return ,result 
        do (progn ,@body))))
 
 ;; icount 
@@ -1073,7 +1073,7 @@
     (optimize (speed 3)))
   (the integer
     (let ((element (next iter)))
-      (if (eq element +stop-iteration+) count 
+      (if (eq element *stop-iteration*) count 
         (if (funcall function element) 
           (the integer (icount-if-in function (1+ count) iter))
           (the integer (icount-if-in function count iter)))))))
@@ -1103,7 +1103,7 @@
   (declare 
     (optimize (speed  3)))
   (let ((element (next iter)))
-    (if (eq element +stop-iteration+) (values nil nil)
+    (if (eq element *stop-iteration*) (values nil nil)
       (if (funcall function element) (values element t)
         (ifind-if function iter)))))
 
@@ -1125,7 +1125,7 @@
     (type integer count)
     (optimize (speed 3)))
   (let ((element (next iter)))
-    (if (eq element +stop-iteration+) nil ;; when not found
+    (if (eq element *stop-iteration*) nil ;; when not found
       (if (funcall function element) count ;; when found 
         (iposition-if-in function (1+ count) iter)))))
 
@@ -1152,7 +1152,7 @@
   (declare 
     (optimize (speed 3)))
   (let ((element (next iter)))
-    (if (eq element +stop-iteration+) result 
+    (if (eq element *stop-iteration*) result 
       (ireduce-in function 
         (funcall function result element)
         iter))))
@@ -1163,8 +1163,8 @@
   (let*
     ((element1 (next iter))
       (element2 (next iter)))
-    (if (eq element1 +stop-iteration+) nil
-      (if (eq element2 +stop-iteration+) element2
+    (if (eq element1 *stop-iteration*) nil
+      (if (eq element2 *stop-iteration*) element2
         (ireduce-in function 
           (funcall function element1 element2)
           iter)))))
@@ -1179,7 +1179,7 @@
     (optimize (speed 3)))
   (the boolean
     (let ((element (next iter)))
-      (if (eq element +stop-iteration+) t
+      (if (eq element *stop-iteration*) t
         (if (funcall function element)
           (the boolean
             (ievery function iter))
@@ -1194,7 +1194,7 @@
     (optimize (speed 3)))
   (the boolean 
     (let ((element (next iter)))
-      (if (eq element +stop-iteration+) nil
+      (if (eq element *stop-iteration*) nil
         (if (funcall function element) t
           (the boolean 
             (isome function iter)))))))
