@@ -48,7 +48,7 @@ because this iterator make a pool that for collect given value from source itera
 ```lisp
 (let* 
   ((iter (icache (imap '1+ (irange 0 1000))))
-   (iter2 (copy iter)))
+   (iter2 (icopy iter)))
   (to-array iter) ;; (1 2 3 ... 1000)
   (to-array iter2)) ;; (1 2 3 ... 1000) its cached value
 ```
