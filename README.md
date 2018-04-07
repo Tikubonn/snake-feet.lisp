@@ -15,7 +15,7 @@ in this case, actually range iterator and map iterator will not make and calcula
 (to-array
   (islice 0 5
     (imap '1+
-      (range 1000)))) ;; #(1 2 3 4 5 6)
+      (irange 1000)))) ;; #(1 2 3 4 5 6)
 ```
 
 ### iterator is copyable 
@@ -24,8 +24,8 @@ and copied iterator is independent to original iterator.
 if you want copy a iterator that cannot be copied, you can use the cache iterator as proxy.
 
 ```lisp
-(copy (ifile file)) ;; error 
-(copy (icache (ifile file))) ;; success
+(icopy (ifile file)) ;; error 
+(icopy (icache (ifile file))) ;; success
 ```
 
 ### make an iterator from function
@@ -35,6 +35,7 @@ for this example, made iterator could not stop, so it give value forever, but yo
 ```lisp
 (iterator
   (lambda () "generated value!"))
+(ilambda () "generated value!") ;; you can use ilambda macro.
 ```
 
 ### cache iterator
@@ -79,9 +80,9 @@ but those saved memory too much than mapcar. of course, it is no wonder, because
 ### Basic Methods
 | Function | Description |
 ---- | ----
-| `(next iterator)` | get a value from iterator. and change iterators status to the next. |
-| `(skip iterator)` | just change iterators status to the next. |
-| `(copy iterator)` | copy an iterator and return. |
+| `(inext iterator)` | get a value from iterator. and change iterators status to the next. |
+| `(iskip iterator)` | just change iterators status to the next. |
+| `(icopy iterator)` | copy an iterator and return. |
 | `(iterator sequence-or-iterator)` | this function make a new iterator by argument. if argument is a sequential, make a new iterator by it by overloaded function. if argument is function, this function make a iterator by it. if argument is a iterator, this function just return it. |
 | `(range start &optional end step)` | this function make a range iterator. range iterator give a continuous number in range. if give function one argument, this make a range iterator that return a number between 0 to first argument. if give function two arguments, this make a range itrator that return a number between `start` to `end`. last, if give function all arguments, this make a range iterator that return a number between `start` to `end`. everytimes, that number increase  by `step`. |
 | `(repeat count &optional element)` | this function make a repeat iterator by arguments. the repeat iterator give a `element` until `count` times. |
