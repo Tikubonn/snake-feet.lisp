@@ -143,8 +143,8 @@
   (the boolean
     (if (iterator-range-end? ran) nil ;; when reached eoi
       (prog1 t 
-        (incf (iterator-range-current ran)
-          (iterator-range-step ran))))))
+        (incf (iterator-current ran)
+          (iterator-step ran))))))
 
 (defmethod copy ((iter iterator-range))
   (let ((niter (make-instance 'iterator-range)))
