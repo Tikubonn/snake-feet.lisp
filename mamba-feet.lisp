@@ -33,19 +33,19 @@
 (defun inext (iter)
   (declare 
     (type iterator iter)
-    (optimize))
+    (optimize (speed 3)))
   (funcall (iterator-inext-function iter) iter))
 
 (defun iskip (iter)
   (declare
     (type iterator iter)
-    (optimize))
+    (optimize (speed 3)))
   (funcall (iterator-iskip-function iter) iter))
 
 (defun icopy (iter)
   (declare 
     (type iterator iter)
-    (optimize))
+    (optimize (speed 3)))
   (funcall (iterator-icopy-function iter) iter))
 
 ;; (declaim (inline inext))
@@ -55,7 +55,7 @@
 (defmethod iterator ((iter iterator))
   (declare 
     (type iterator iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator iter))
 
 ;; function 
@@ -68,13 +68,13 @@
 (defun inext-iterator-function (iter)
   (declare 
     (type iterator-function iter)
-    (optimize))
+    (optimize (speed 3)))
   (funcall (iterator-function-function iter)))
 
 (defun iskip-iterator-function (iter)
   (declare
     (type iterator-function iter)
-    (optimize))
+    (optimize (speed 3)))
   (let ((element (funcall (iterator-function-function iter))))
     (not (eq element *stop-iteration*))))
 
@@ -82,7 +82,7 @@
   (declare
     (ignore iter)
     (type iterator-function iter)
-    (optimize))
+    (optimize (speed 3)))
   (error "iterator-function cannot icopy, because I cannot icopy inner functions status."))
 
 (defmacro ilambda (arguments &body body)
@@ -90,7 +90,7 @@
 
 (defun ifunction (function)
   (declare
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-function 
     (make-iterator-function
       :inext-function #'inext-iterator-function
@@ -101,20 +101,20 @@
 (defmethod iterator ((iter iterator-function))
   (declare
     (type iterator-function iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-function iter))
 
 (defmethod iterator ((function function))  
   (declare
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-function 
     (ifunction function)))
 
 (defmethod iterator ((name symbol))
   (declare
     (type symbol name)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-function
     (ifunction name)))
 
@@ -128,7 +128,7 @@
 (defun inext-iterator-list (iter)
   (declare
     (type iterator-list iter)
-    (optimize))
+    (optimize (speed 3)))
   (if (null (iterator-list-node iter)) *stop-iteration*
     (prog1 (car (iterator-list-node iter))
       (setf (iterator-list-node iter)
@@ -137,7 +137,7 @@
 (defun iskip-iterator-list (iter)
   (declare
     (type iterator-list iter)
-    (optimize))
+    (optimize (speed 3)))
   (the boolean
     (if (null (iterator-list-node iter)) nil ;; when reached eoi
       (prog1 t 
@@ -147,7 +147,7 @@
 (defun icopy-iterator-list (iter)
   (declare
     (type iterator-list iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-list
     (make-iterator-list 
       :inext-function (iterator-inext-function iter)
@@ -158,7 +158,7 @@
 (defun ilist (lis)
   (declare
     (type list lis)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-list
     (make-iterator-list 
       :inext-function #'inext-iterator-list 
@@ -169,13 +169,13 @@
 (defmethod iterator ((iter iterator-list))
   (declare
     (type iterator-list iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-list iter))
 
 (defmethod iterator ((lis list))
   (declare
     (type list lis)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-list (ilist lis)))
 
 ;; array 
@@ -189,7 +189,7 @@
 (defun inext-iterator-array (iter)
   (declare
     (type iterator-array iter)
-    (optimize))
+    (optimize (speed 3)))
   (if (< (iterator-array-index iter) (length (iterator-array-array iter)))
     (prog1 (aref (iterator-array-array iter) (iterator-array-index iter))
       (incf (iterator-array-index iter)))
@@ -198,7 +198,7 @@
 (defun iskip-iterator-array (iter)
   (declare
     (type iterator-array iter)
-    (optimize))
+    (optimize (speed 3)))
   (the boolean 
     (if (< (iterator-array-index iter) (length (iterator-array-array iter)))
       (prog1 t (incf (iterator-array-index iter)))
@@ -207,7 +207,7 @@
 (defun icopy-iterator-array (iter)
   (declare
     (type iterator-array iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-array 
     (make-iterator-array 
       :inext-function (iterator-inext-function iter) 
@@ -219,7 +219,7 @@
 (defun iarray (arr)
   (declare
     (type array arr)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-array
     (make-iterator-array 
       :inext-function #'inext-iterator-array 
@@ -230,13 +230,13 @@
 (defmethod iterator ((iter iterator-array))
   (declare
     (type iterator-array iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-array iter))
 
 (defmethod iterator ((arr array))
   (declare
     (type array arr)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-array (iarray arr)))
 
 ;; range 
@@ -252,7 +252,7 @@
 (defun iterator-range-end? (iter)
   (declare
     (type iterator-range iter)
-    (optimize))
+    (optimize (speed 3)))
   (the boolean
     (cond 
       ((= (iterator-range-step iter) 0) nil)
@@ -264,7 +264,7 @@
 (defun inext-iterator-range (iter)
   (declare
     (type iterator-range iter)
-    (optimize))
+    (optimize (speed 3)))
   (if (iterator-range-end? iter) *stop-iteration*
     (the number 
       (prog1 (iterator-range-current iter)
@@ -274,7 +274,7 @@
 (defun iskip-iterator-range (iter)
   (declare
     (type iterator-range iter)
-    (optimize))
+    (optimize (speed 3)))
   (the boolean
     (if (iterator-range-end? iter) nil ;; when reached eoi
       (prog1 t
@@ -284,7 +284,7 @@
 (defun icopy-iterator-range (iter)
   (declare
     (type iterator-range iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-range
     (make-iterator-range 
       :inext-function (iterator-inext-function iter)
@@ -298,7 +298,7 @@
 (defun irange (start &optional end step)
   (declare
     (type number start)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-range
     (cond 
       (step (make-iterator-range :inext-function #'inext-iterator-range :iskip-function #'iskip-iterator-range :icopy-function #'icopy-iterator-range :current start :start start :end end :step step))
@@ -308,7 +308,7 @@
 (defmethod iterator ((iter iterator-range))
   (declare
     (type iterator-range iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-range iter))
 
 ;; repeat 
@@ -322,7 +322,7 @@
 (defun inext-iterator-repeat (iter)
   (declare
     (type iterator-repeat iter)
-    (optimize))
+    (optimize (speed 3)))
   (if (zerop (iterator-repeat-count iter)) *stop-iteration*
     (prog1 (iterator-repeat-element iter)
       (decf (iterator-repeat-count iter)))))
@@ -330,7 +330,7 @@
 (defun iskip-iterator-repeat (iter)
   (declare
     (type iterator-repeat iter)
-    (optimize))
+    (optimize (speed 3)))
   (the boolean
     (if (zerop (iterator-repeat-count iter)) nil ;; when reached eoi
       (prog1 t (decf (iterator-repeat-count iter))))))
@@ -338,7 +338,7 @@
 (defun icopy-iterator-repeat (iter)
   (declare
     (type iterator-repeat iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-repeat
     (make-iterator-repeat
       :inext-function (iterator-inext-function iter)
@@ -350,7 +350,7 @@
 (defun irepeat (count &optional element)
   (declare
     (type integer count)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-repeat
     (make-iterator-repeat 
       :inext-function #'inext-iterator-repeat
@@ -362,7 +362,7 @@
 (defmethod iterator ((iter iterator-repeat))
   (declare
     (type iterator-repeat iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-repeat iter))
 
 ;; map 
@@ -376,7 +376,7 @@
 (defun inext-iterator-map (iter)
   (declare 
     (type iterator-map iter)
-    (optimize))
+    (optimize (speed 3)))
   (let ((element (inext (iterator-map-iterator iter))))
     (if (eq element *stop-iteration*) *stop-iteration*
       (funcall (iterator-map-function iter) element))))
@@ -384,13 +384,13 @@
 (defun iskip-iterator-map (iter)
   (declare
     (type iterator-map iter)
-    (optimize))
+    (optimize (speed 3)))
   (iskip (iterator-map-iterator iter)))
 
 (defun icopy-iterator-map (iter)
   (declare
     (type iterator-map iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-map 
     (make-iterator-map 
       :inext-function (iterator-inext-function iter)
@@ -402,7 +402,7 @@
 (defun imap (function iter)
   (declare
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-map
     (make-iterator-map 
       :inext-function #'inext-iterator-map
@@ -414,7 +414,7 @@
 (defmethod iterator ((iter iterator-map))
   (declare
     (type iterator-map iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-map iter))
 
 ;; filter 
@@ -428,7 +428,7 @@
 (defun inext-iterator-filter (iter)
   (declare
     (type iterator-filter iter)
-    (optimize))
+    (optimize (speed 3)))
   (let ((element (inext (iterator-filter-iterator iter))))
     (if (eq element *stop-iteration*) *stop-iteration*
       (if (funcall (iterator-filter-function iter) element) element
@@ -447,7 +447,7 @@
 (defun icopy-iterator-filter (iter)
   (declare
     (type iterator-filter iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-filter
     (make-iterator-filter
       :inext-function (iterator-inext-function iter)
@@ -459,7 +459,7 @@
 (defun ifilter (function iter)
   (declare
     (type iterator-filter iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-filter
     (make-iterator-filter
       :inext-function #'inext-iterator-filter
@@ -471,7 +471,7 @@
 (defmethod iterator ((iter iterator-filter))
   (declare
     (type iterator-filter iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-filter iter))
 
 ;; slice 
@@ -487,14 +487,14 @@
 (defun setup-iterator-slice (iter)
   (declare
     (type iterator-slice iter)
-    (optimize))
+    (optimize (speed 3)))
   (loop while (< (iterator-slice-current iter) (iterator-slice-start iter))
     do (incf (iterator-slice-current iter))))
 
 (defun inext-iterator-slice  (iter)
   (declare
     (type iterator-slice iter)
-    (optimize))
+    (optimize (speed 3)))
   (setup-iterator-slice iter)
   (let ((element (inext (iterator-slice-iterator iter))))
     (if (eq element *stop-iteration*) *stop-iteration*
@@ -504,7 +504,7 @@
 (defun iskip-iterator-slice (iter)
   (declare
     (type iterator-slice iter)
-    (optimize))
+    (optimize (speed 3)))
   (setup-iterator-slice iter)
   (the boolean
     (if (iskip (iterator-slice-iterator iter))
@@ -514,7 +514,7 @@
 (defun icopy-iterator-slice (iter)
   (declare
     (type iterator-slice iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-slice
     (make-iterator-slice
       :inext-function (iterator-inext-function iter)
@@ -528,7 +528,7 @@
 (defun islice (start end iter)
   (declare
     (type fixnum start end)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-slice
     (make-iterator-slice
       :inext-function #'inext-iterator-slice
@@ -542,7 +542,7 @@
 (defmethod iterator ((iter iterator-slice))
   (declare
     (type iterator-slice iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-slice iter))
 
 ;; step 
@@ -558,7 +558,7 @@
 (defun setup-iterator-step (iter)
   (declare
     (type iterator-step iter)
-    (optimize))
+    (optimize (speed 3)))
   (loop while (< (iterator-step-current iter) (iterator-step-offset iter)) do 
     (iskip (iterator-step-iterator iter))
     (incf (iterator-step-current iter))))
@@ -566,7 +566,7 @@
 (defun inext-iterator-step (iter)
   (declare
     (type iterator-step iter)
-    (optimize))
+    (optimize (speed 3)))
   (setup-iterator-step iter)
   (let ((element (inext (iterator-step-iterator iter))))
     (if (eq element *stop-iteration*) *stop-iteration*
@@ -579,7 +579,7 @@
   (declare
     (type fixnum count)
     (type iterator-step iter)
-    (optimize))
+    (optimize (speed 3)))
   (if (= 0 count) t
     (if (iskip (iterator-step-iterator iter))
       (progn
@@ -590,7 +590,7 @@
 (defun iskip-iterator-step (iter)
   (declare
     (type iterator-step iter)
-    (optimize))
+    (optimize (speed 3)))
   (setup-iterator-step iter)
   (iskip-iterator-step-in 
     (iterator-step-step iter) iter))
@@ -598,7 +598,7 @@
 (defun icopy-iterator-step (iter)
   (declare
     (type iterator-step iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-step
     (make-iterator-step
       :inext-function (iterator-inext-function iter)
@@ -612,7 +612,7 @@
 (defun istep (offset step iter)
   (declare
     (type fixnum offset step)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-step
     (make-iterator-step
       :inext-function #'inext-iterator-step
@@ -626,7 +626,7 @@
 (defmethod iterator ((iter iterator-step))
   (declare
     (type iterator-step iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-step iter))
 
 ;; append 
@@ -639,7 +639,7 @@
 (defun inext-iterator-append (iter)
   (declare
     (type iterator-append iter)
-    (optimize))
+    (optimize (speed 3)))
   (if (null (iterator-append-iterators iter)) *stop-iteration*
     (let ((element (inext (car (iterator-append-iterators iter)))))
       (cond 
@@ -652,7 +652,7 @@
 (defun iskip-iterator-append (iter)
   (declare
     (type iterator-append iter)
-    (optimize))
+    (optimize (speed 3)))
   (if (null (iterator-append-iterators iter)) nil ;; when reached eoi
     (if (iskip (car (iterator-append-iterators iter))) t
       (progn
@@ -663,7 +663,7 @@
 (defun icopy-iterator-append (iter)
   (declare
     (type iterator-append iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-append 
     (make-iterator-append
       :inext-function (iterator-inext-function iter)
@@ -673,7 +673,7 @@
 
 (defun iappend (&rest iters)
   (declare
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-append 
     (make-iterator-append 
       :inext-function #'inext-iterator-append
@@ -684,7 +684,7 @@
 (defmethod iterator ((iter iterator-append))
   (declare
     (type iterator-append iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-append iter))
 
 ;; zip 
@@ -697,7 +697,7 @@
 (defun inext-iterator-zip (iter)
   (declare
     (type iterator-zip iter)
-    (optimize))
+    (optimize (speed 3)))
   (loop with element
     for citer in (iterator-zip-iterators iter) do 
     (setq element (inext citer)) 
@@ -707,7 +707,7 @@
 (defun iskip-iterator-zip-in (iters)
   (declare
     (type list iters)
-    (optimize))
+    (optimize (speed 3)))
   (if (null iters) t
     (if (iskip (car iters))
       (iskip-iterator-zip-in (cdr iters))
@@ -716,14 +716,14 @@
 (defun iskip-iterator-zip (iter)
   (declare
     (type iterator-zip iter)
-    (optimize))
+    (optimize (speed 3)))
   (iskip-iterator-zip-in 
     (iterator-zip-iterators iter)))
 
 (defun icopy-iterator-zip (iter)
   (declare
     (type iterator-zip iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-zip 
     (make-iterator-zip 
       :inext-function (iterator-inext-function iter)
@@ -744,7 +744,7 @@
 (defmethod iterator ((iter iterator-zip))
   (declare
     (type iterator-zip iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-zip iter))
 
 ;; cache 
@@ -759,7 +759,7 @@
 (defun inext-iterator-cache (iter)
   (declare
     (type iterator-cache iter)
-    (optimize))
+    (optimize (speed 3)))
   (if (< (iterator-cache-index iter) (length (iterator-cache-collection iter)))
     (prog1 (aref (iterator-cache-collection iter) (iterator-cache-index iter))
       (incf (iterator-cache-index iter)))
@@ -772,7 +772,7 @@
 (defun iskip-iterator-cache (iter)
   (declare
     (type iterator-cache iter)
-    (optimize))
+    (optimize (speed 3)))
   (the boolean 
     (if (< (iterator-cache-index iter) (length (iterator-cache-collection iter)))
       (prog1 t (incf (iterator-cache-index iter)))
@@ -783,7 +783,7 @@
 (defun icopy-iterator-cache (iter)
   (declare
     (type iterator-cache iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-cache 
     (make-iterator-cache 
       :inext-function (iterator-inext-function iter)
@@ -795,7 +795,7 @@
 
 (defun icache (iter)
   (declare
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-cache 
     (make-iterator-cache 
       :inext-function #'inext-iterator-cache
@@ -807,7 +807,7 @@
 (defmethod iterator ((iter iterator-cache))
   (declare
     (type iterator-cache iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-cache iter))
 
 ;; list-builder 
@@ -819,7 +819,7 @@
 (defun push-list-builder (element lis)
   (declare
     (type list-builder lis)
-    (optimize))
+    (optimize (speed 3)))
   (cond
     ((and (null (list-builder-top lis))
        (null (list-builder-bottom lis)))
@@ -833,7 +833,7 @@
 (defun push-last-list-builder (element lis)
   (declare
     (type list-builder lis)
-    (optimize))
+    (optimize (speed 3)))
   (cond 
     ((and (null (list-builder-top lis))
        (null (list-builder-bottom lis)))
@@ -848,7 +848,7 @@
 (defun result-list-builder (lis)
   (declare
     (type list-builder lis)
-    (optimize))
+    (optimize (speed 3)))
   (list-builder-top lis))
 
 ;; reverse 
@@ -863,7 +863,7 @@
 (defun init-iterator-reverse (iter)
   (declare
     (type iterator-reverse iter)
-    (optimize))
+    (optimize (speed 3)))
   (let ((element (inext (iterator-reverse-iterator iter))))
     (unless (eq element *stop-iteration*)
       (vector-push-extend element 
@@ -873,7 +873,7 @@
 (defun inext-iterator-reverse (iter)
   (declare
     (type iterator-reverse iter)
-    (optimize))
+    (optimize (speed 3)))
   (if (= 0 (length (iterator-reverse-collection iter)))
     (init-iterator-reverse iter))
   (if (< (iterator-reverse-index iter) (length (iterator-reverse-collection iter)))
@@ -887,7 +887,7 @@
 (defun iskip-iterator-reverse (iter)
   (declare
     (type iterator-reverse iter)
-    (optimize))
+    (optimize (speed 3)))
   (if (= 0 (length (iterator-reverse-collection iter)))
     (init-iterator-reverse iter))
   (the boolean 
@@ -898,7 +898,7 @@
 (defun icopy-iterator-reverse (iter)
   (declare
     (type iterator-reverse iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-reverse 
     (make-iterator-reverse 
       :inext-function (iterator-inext-function iter) 
@@ -910,7 +910,7 @@
 
 (defun ireverse (iter)
   (declare
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-reverse
     (make-iterator-reverse 
       :inext-function #'inext-iterator-reverse 
@@ -922,7 +922,7 @@
 (defmethod iterator ((iter iterator-reverse))
   (declare
     (type iterator-reverse iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-reverse iter))
 
 ;; sort 
@@ -938,7 +938,7 @@
 (defun init-iterator-sort-collect (iter)
   (declare
     (type iterator-sort iter)
-    (optimize))
+    (optimize (speed 3)))
   (let ((element (inext (iterator-sort-iterator iter))))
     (unless (eq element *stop-iteration*)
       (vector-push-extend element 
@@ -948,7 +948,7 @@
 (defun init-iterator-sort (iter)
   (declare
     (type iterator-sort iter)
-    (optimize))
+    (optimize (speed 3)))
   (init-iterator-sort-collect iter)
   (sort (iterator-sort-collection iter)
     (iterator-sort-function iter)))
@@ -956,7 +956,7 @@
 (defun inext-iterator-sort (iter)
   (declare
     (type iterator-sort iter)
-    (optimize))
+    (optimize (speed 3)))
   (if (= 0 (length (iterator-sort-collection iter)))
     (init-iterator-sort iter))
   (if (< (iterator-sort-index iter) (length (iterator-sort-collection iter)))
@@ -968,7 +968,7 @@
 (defun iskip-iterator-sort (iter)  
   (declare
     (type iterator-sort iter)
-    (optimize))
+    (optimize (speed 3)))
   (if (= 0 (length (iterator-sort-collection iter)))
     (init-iterator-sort iter))
   (the boolean
@@ -980,7 +980,7 @@
 (defun icopy-iterator-sort (iter)
   (declare
     (type iterator-sort iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-sort
     (make-iterator-sort 
       :inext-function (iterator-inext-function iter)
@@ -993,7 +993,7 @@
 (defun isort (function iter)
   (declare
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-sort
     (make-iterator-sort 
       :inext-function #'inext-iterator-sort
@@ -1006,7 +1006,7 @@
 (defmethod iterator ((iter iterator-sort))
   (declare
     (type iterator-sort iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-sort iter))
 
 ;; file 
@@ -1023,7 +1023,7 @@
 (defun inext-iterator-file (iter)
   (declare
     (type iterator-file iter)
-    (optimize))
+    (optimize (speed 3)))
   (let ((char (funcall (iterator-file-read-function iter) nil *iterator-file-eof*)))
     (if (eq char *iterator-file-eof*) *stop-iteration*
       char)))
@@ -1031,7 +1031,7 @@
 (defun iskip-iterator-file (iter)
   (declare
     (type iterator-file iter)
-    (optimize))
+    (optimize (speed 3)))
   (let ((char (funcall (iterator-file-read-function iter) nil *iterator-file-eof*)))
     (if (eq char *iterator-file-eof*) nil t)))
 
@@ -1039,13 +1039,13 @@
   (declare
     (ignore iter)
     (type iterator-file iter)
-    (optimize))
+    (optimize (speed 3)))
   (error "cannot icopy an iterator-file, because it cannot icopy a file status."))
 
 (defun ifile (file &optional (function #'read-char))
   (declare
     (type stream file)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-file 
     (make-iterator-file 
       :inext-function #'inext-iterator-file
@@ -1057,7 +1057,7 @@
 (defmethod iterator ((iter iterator-file))
   (declare
     (type iterator-file iter)
-    (optimize))
+    (optimize (speed 3)))
   (the iterator-file iter))
 
 ;; macro 
@@ -1080,7 +1080,7 @@
     (type fixnum count)
     (type iterator iter)
     (type function function)
-    (optimize))  
+    (optimize (speed 3)))  
   (let ((element (inext iter)))
     (if (eq element *stop-iteration*) count 
       (if (funcall function element) 
@@ -1090,12 +1090,12 @@
 (defun icount-if (function iter)
   (declare
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (icount-if-in function 0 iter))
 
 (defun icount (item iter)
   (declare
-    (optimize))
+    (optimize (speed 3)))
   (icount-if 
     (lambda (element)
       (equal item element))
@@ -1107,7 +1107,7 @@
   (declare
     (type iterator iter)
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (let ((element (inext iter)))
     (if (eq element *stop-iteration*) (values nil nil)
       (if (funcall function element) (values element t)
@@ -1116,12 +1116,12 @@
 (defun ifind-if (function iter)
   (declare
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (ifind-if-in function (iterator iter)))
 
 (defun ifind (item iter)
   (declare
-    (optimize))
+    (optimize (speed 3)))
   (ifind-if 
     (lambda (element)
       (equal item element))
@@ -1134,7 +1134,7 @@
     (type fixnum count)
     (type iterator iter)
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (let ((element (inext iter)))
     (if (eq element *stop-iteration*) nil ;; when not found
       (if (funcall function element) count   ;; when found 
@@ -1143,12 +1143,12 @@
 (defun iposition-if (function iter)
   (declare
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (iposition-if-in function 0 (iterator iter)))
 
 (defun iposition (item iter)
   (declare
-    (optimize))
+    (optimize (speed 3)))
   (iposition-if 
     (lambda (element)
       (equal item element))
@@ -1160,7 +1160,7 @@
   (declare
     (type iterator iter)
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (let ((element (inext iter)))
     (if (eq element *stop-iteration*) result 
       (ireduce-in function 
@@ -1170,7 +1170,7 @@
 (defun ireduce (function iter)
   (declare
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (let*
     ((niter (iterator iter))
       (element1 (inext niter))
@@ -1187,7 +1187,7 @@
   (declare
     (type iterator iter)
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (let ((element (inext iter)))
     (if (eq element *stop-iteration*) t
       (if (funcall function element)
@@ -1197,7 +1197,7 @@
 (defun ievery (function iter)
   (declare
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (ievery-in function (iterator iter)))
 
 ;; isome 
@@ -1206,7 +1206,7 @@
   (declare 
     (type iterator iter)
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (let ((element (inext iter)))
     (if (eq element *stop-iteration*) nil
       (if (funcall function element) t
@@ -1215,5 +1215,5 @@
 (defun isome (function iter)
   (declare 
     (type function function)
-    (optimize))
+    (optimize (speed 3)))
   (isome-in function (iterator iter)))
