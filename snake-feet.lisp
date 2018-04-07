@@ -8,12 +8,12 @@
 
 (defpackage snake-feet 
   (:use :common-lisp)
-  (:export :to-array :to-list :to-array :iterator :ifunction :ilambda :ilist :iarray
-    :irange :irepeat :imap :*stop-iteration* :icopy
-    :ifilter :islice :iappend :ireverse :isort
-    :ireduce :ifind-if :ifind :iposition-if :iposition :icache
-    :icount-if :icount :inext :iskip :icopy :doiterator
-    :ievery :isome :istep :izip))
+  (:export :*stop-iteration*
+    :inext :iskip :icopy :to-list :to-array
+    :iterator :ilist :iarray :ifunction :ilambda :irange :irepeat :ifile :icache
+    :imap :ifilter :islice :istep :iappend :izip :ireverse :isort
+    :iposition-if :iposition :ifind-if :ifind :icount-if :icount :isome :ievery
+    :doiterator))
 
 (in-package snake-feet)
 

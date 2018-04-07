@@ -8,11 +8,12 @@
 
 (defpackage mamba-feet 
   (:use :common-lisp)
-  (:shadow :inext :iskip :icopy)
-  (:export :to-list :to-array :inext :iskip :icopy :iterator :ilist :iarray :ifunction :ilambda :*stop-iteration*
-    :irange :irepeat :imap :ifilter :iappend :izip :islice :istep
-    :icache :ireverse :isort :ifile :doiterator :icount-if :icount 
-    :iposition-if :iposition :ifind-if :ifind :ireduce :isome :ievery))
+  (:export :*stop-iteration*
+    :inext :iskip :icopy :to-list :to-array
+    :iterator :ilist :iarray :ifunction :ilambda :irange :irepeat :ifile :icache
+    :imap :ifilter :islice :istep :iappend :izip :ireverse :isort
+    :iposition-if :iposition :ifind-if :ifind :icount-if :icount :isome :ievery
+    :doiterator))
 
 (in-package :mamba-feet)
 
@@ -614,7 +615,7 @@
     (type iterator-step iter)
     (optimize (speed 3)))
   (setup-iterator-step iter)
-  (prog1 (skiiskip (iterator-step-iterator iter))
+  (prog1 (iskip (iterator-step-iterator iter))
     (loop repeat (1- (iterator-step-step iter)) do
       (iskip (iterator-step-iterator iter))
       (incf (iterator-step-current iter)))))
