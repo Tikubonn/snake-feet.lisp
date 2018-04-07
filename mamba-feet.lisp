@@ -1026,15 +1026,15 @@
       :read-function function
       :file file)))
 
-(defconstant *iterator-file-eof*
-  (make-symbol "*iterator-file-eof*"))
+(defconstant +iterator-file-eof+
+  (make-symbol "+iterator-file-eof+"))
 
 (defun next-iterator-file (iter)
   (declare 
     (type iterator-file iter)
     (optimize (speed 3)))
-  (let ((char (funcall (iterator-file-read-function iter) nil *iterator-file-eof*)))
-    (if (eq char *iterator-file-eof*) +stop-iteration+
+  (let ((char (funcall (iterator-file-read-function iter) nil +iterator-file-eof+)))
+    (if (eq char +iterator-file-eof+) +stop-iteration+
       char)))
 
 (defun skip-iterator-file (iter)
@@ -1042,8 +1042,8 @@
     (type iterator-file iter)
     (optimize (speed 3)))
   (the boolean
-    (let ((char (funcall (iterator-file-read-function iter) nil *iterator-file-eof*)))
-      (if (eq char *iterator-file-eof*) nil t))))
+    (let ((char (funcall (iterator-file-read-function iter) nil +iterator-file-eof+)))
+      (if (eq char +iterator-file-eof+) nil t))))
 
 (defun copy-iterator-file (iter)
   (error "cannot copy an iterator-file, because it cannot copy a file status."))

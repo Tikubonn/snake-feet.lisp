@@ -792,7 +792,7 @@
       (format stream "iterator-file-error: ~a~%"
         (iterator-error-message condition)))))
 
-(defconstant *iterator-file-eof* (make-symbol "iterator-file-eof"))
+(defconstant +iterator-file-eof+ (make-symbol "iterator-file-eof"))
 
 (defclass iterator-file (iterator)
   ((file 
@@ -804,8 +804,8 @@
       :accessor iterator-read-function)))
 
 (defmethod next ((iter iterator-file))
-  (let ((element (funcall (iterator-read-function iter) (iterator-file iter) nil *iterator-file-eof*)))
-    (if (eq element *iterator-file-eof*) +stop-iteration+ element)))
+  (let ((element (funcall (iterator-read-function iter) (iterator-file iter) nil +iterator-file-eof+)))
+    (if (eq element +iterator-file-eof+) +stop-iteration+ element)))
 
 (defmethod copy ((iter iterator-file))
   (error 
