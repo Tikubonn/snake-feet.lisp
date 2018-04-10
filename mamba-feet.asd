@@ -7,4 +7,5 @@
   :licence "MIT"
   :depends-on nil 
   :components 
-  ((:file "mamba-feet")))
+  ((:file "lib/builder")
+    (:file "mamba-feet" :depends-on ("lib/builder"))))
