@@ -30,7 +30,7 @@ if you want copy a iterator that cannot be copied, you can use the cache iterato
 
 ### make an iterator from function
 you can make a iterator from function if you want. 
-for this example, made iterator could not stop, so it give value forever, but you can stop iteration with return a value of `*stop-iteration*` in the function.
+for this example, made iterator could not stop, so it give value forever, but you can stop iteration with return a multiple values that second value is `t`.
 
 ```lisp
 (iterator
@@ -59,22 +59,22 @@ it now developing, so it have not enough function and iterator that compare by o
 
 ## Performance
 I wrote simple code for performance check. you can read to [here](benchmark.lisp) if you want :D  
-I show performance table on here. on current version (march 5th), snake-feet and mamba-feet are too slow than mapcar and some native functions. I hope that those will be more faster.
-but those saved memory too much than mapcar. of course, it is no wonder, because mapcar return a new sequence.
+I show performance table on here. on current version (march 10th), mamba-feet is almost the same performance as native code that is not optimized.
+and those saved memory too much than mapcar. of course, it is no wonder, because mapcar return a new sequence.
 
 ### CPU performance 
-| code | processor cycles | processor cycles per mapcar |
----- | ---- | ---- 
-| snake-feet | 523,144,764 | 845.05% |
-| mamba-feet | 105,921,236 | 171.09% |
-| mapcar | **61,906,231** | **100%** |
+| code | spend time | processor cycles | processor cycles per mapcar |
+---- | ---- | ---- | ---- 
+| snake-feet | 0.281 | 670,128,745 | 662.302% |
+| mamba-feet | 0.047 | 104,394,399 | 103.175% |
+| mapcar | 0.047 | **101,181,684** | **100%** |
 
 ### Memory performance 
 | code | bytes consed | bytes consed per mapcar |
 ---- | ---- | ---- 
-| snake-feet | 5,813,408 | 9.56% |
-| mamba-feet | **393,152** | **0.64%** |
-| mapcar | 60,775,232 | 100% |
+| snake-feet | 3,850,704 | 6.331% |
+| mamba-feet | **327,648** | **0.538%** |
+| mapcar | 60,817,408 | 100% |
 
 ## Methods
 ### Basic Methods
@@ -113,6 +113,13 @@ those functions dont make a new iterator. those functions spend iterator for ret
 | `(iposition item iterator)` | this function return a index of element that match as item. if could not found index, this function return a nil. (this will return multiple value since next version). |
 | `(icount-if function iterator)` | count element from iterator with trued by function result. |
 | `(icount item iterator)` | count element from iterator that matched by argument. | 
+
+### Utility Macros 
+those macros are provide some function for you.
+
+| Macro | Description |
+---- | ---- 
+| `(doiterator (variable iterator result) &body body)` | this like as `(dolist ...)`. doiterator assign a value to variable from iterator and repeat doing body form until reached end of iteration. |
 
 ## License 
 this package released under the MIT Licese.
