@@ -28,6 +28,13 @@
       (format stream "iterator-error: ~a~%" 
         (iterator-error-message condition)))))
 
+(define-condition iterator-coping-error (iterator-error)
+  ()
+  (:report
+    (lambda (condition stream)
+      (format stream "iterator-coping-error: ~a~%"
+        (iterator-error-message condition)))))
+
 ;; iterator
 
 (defclass iterator (t) nil)
@@ -115,10 +122,14 @@
   (funcall (iterator-function iter)))
 
 (defmethod icopy ((iter iterator-function))
-  (error "iterator-function cannot icopy, because I cannot icopy inner functions status."))
+  (error
+    (make-instance 'iterator-coping-error 
+      :message "iterator-function class cannot coping.")))
 
 (defmethod icopy-from :after ((iter iterator-function) (iter-from iterator-function))
-  (error "iterator-function cannot icopy, because I cannot icopy inner functions status."))
+  (error
+    (make-instance 'iterator-coping-error 
+      :message "iterator-function class cannot coping.")))
 
 (defmethod ifunction ((function function))
   (make-instance 'iterator-function :function function))
@@ -879,13 +890,6 @@
 
 ;; file 
 
-(define-condition iterator-file-error (iterator-error)
-  ()
-  (:report
-    (lambda (condition stream)
-      (format stream "iterator-file-error: ~a~%"
-        (iterator-error-message condition)))))
-
 (defvar *iterator-file-eof* (make-symbol "iterator-file-eof"))
 
 (defclass iterator-file (iterator)
@@ -911,7 +915,7 @@
     (ignore iter)
     (optimize (speed 3)))
   (error 
-    (make-instance 'iterator-file-error 
+    (make-instance 'iterator-coping-error 
       :message "iterator-file class cannot coping.")))
 
 (defmethod icopy-from :after ((iter iterator-file) (iter-from iterator-file))
@@ -919,7 +923,7 @@
     (ignore iter iter-from)
     (optimize (speed 3)))
   (error
-    (make-instance 'iterator-file-error
+    (make-instance 'iterator-coping-error
       :message "iterator-file class cannot coping.")))
 
 (defmethod ifile (file &key (read-function 'read-char))

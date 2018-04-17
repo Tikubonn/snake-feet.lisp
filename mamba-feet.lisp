@@ -16,6 +16,25 @@
 
 (in-package :mamba-feet)
 
+;; condition 
+
+(define-condition iterator-error (simple-error)
+  ((message
+     :initarg :message
+     :initform ""
+     :accessor iterator-error-message))
+  (:report
+    (lambda (condition stream)
+      (format stream "iterator-error: ~a~%" 
+        (iterator-error-message condition)))))
+
+(define-condition iterator-coping-error (iterator-error)
+  ()
+  (:report
+    (lambda (condition stream)
+      (format stream "iterator-coping-error: ~a~%"
+        (iterator-error-message condition)))))
+
 ;; define generic
 
 (defgeneric iterator (iter))
@@ -121,7 +140,9 @@
     (ignore iter)
     (type iterator-function iter)
     (optimize))
-  (error "iterator-function cannot icopy, because I cannot icopy inner functions status."))
+  (error
+    (make-instance 'iterator-coping-error 
+      :message "type of iterator-function cannot coping.")))
 
 (defmacro ilambda (arguments &body body)
   `(ifunction (lambda ,arguments ,@body)))
@@ -1038,7 +1059,9 @@
   (declare
     (ignore iter)
     (type iterator-file iter))
-  (error "cannot icopy an iterator-file, because it cannot icopy a file status."))
+  (error
+    (make-instance 'iterator-coping-error 
+      :message "type of iterator-file cannot coping.")))
 
 (defun ifile (file &optional (function #'read-char))
   (declare
