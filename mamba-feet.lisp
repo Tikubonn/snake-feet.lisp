@@ -51,65 +51,6 @@
     (optimize))
   (the iterator iter))
 
-;; ;; list-builder 
-
-;; (defstruct list-builder 
-;;   (top nil :type list)
-;;   (bottom nil :type list)
-;;   (length 0 :type fixnum))
-
-;; (defun push-list-builder (item iter)
-;;   (declare
-;;     (type list-builder iter)
-;;     (optimize (speed 3)))
-;;   (cond 
-;;     ((and (null (list-builder-top iter))
-;;        (null (list-builder-bottom iter)))
-;;       (let ((seq (cons item nil)))
-;;         (setf (list-builder-top iter) seq)
-;;         (setf (list-builder-bottom iter) seq)))
-;;     (t 
-;;       (let ((seq (cons item (list-builder-top iter))))
-;;         (setf (list-builder-top iter) seq)))))
-
-;; (defun push-last-list-builder (item iter)
-;;   (declare
-;;     (type list-builder iter)
-;;     (optimize (speed 3)))
-;;   (cond 
-;;     ((and (null (list-builder-top iter))
-;;        (null (list-builder-bottom iter)))
-;;       (let ((seq (cons item nil)))
-;;         (setf (list-builder-top iter) seq)
-;;         (setf (list-builder-bottom iter) seq)
-;;         (incf (list-builder-length iter))))
-;;     (t 
-;;       (let ((seq (cons item nil)))
-;;         (setf (cdr (list-builder-bottom iter)) seq)
-;;         (setf (list-builder-bottom iter) seq)
-;;         (incf (list-builder-length iter))))))
-
-;; (defun length-list-builder (iter)
-;;   (declare
-;;     (type list-builder iter)
-;;     (optimize (speed 3)))
-;;   (list-builder-length iter))
-
-;; (defun result-list-builder (iter)
-;;   (declare
-;;     (type list-builder iter)
-;;     (optimize (speed 3)))
-;;   (list-builder-top iter))
-
-;; (defmacro result-list-builder-as-array (builder-form &rest options)
-;;   (let ((builder (gensym)))
-;;     `(let ((,builder ,builder-form))
-;;        (let ((seq (make-array (length-list-builder ,builder) ,@options)))
-;;          (prog1 seq
-;;            (loop for element in (result-list-builder ,builder) 
-;;              for index from 0 below (length-list-builder ,builder) do
-;;              (setf (aref seq index) element)))))))
-
 ;; to-list 
 
 (defun to-list-in (builder iter)

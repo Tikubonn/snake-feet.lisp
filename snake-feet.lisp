@@ -28,10 +28,6 @@
       (format stream "iterator-error: ~a~%" 
         (iterator-error-message condition)))))
 
-;; constant
-
-(defvar *stop-iteration* (make-symbol "*stop-iteration*"))
-
 ;; iterator
 
 (defclass iterator (t) nil)
@@ -931,6 +927,29 @@
     (optimize (speed 3)))
   (make-instance 'iterator-file :file file :read-function read-function))
 
+;; macro 
+
+(defmacro doiterator (argument &body body)
+  (let
+    ((variable (nth 0 argument))
+      (formula (nth 1 argument))
+      (result (nth 2 argument))
+      (iter (gensym)))
+    `(loop 
+       with ,iter = ,formula
+       with ,variable 
+       with eoi do 
+       (multiple-value-bind 
+         (element-tmp eoi-tmp)
+         (inext ,iter)
+         (declare
+           (type boolean eoi))
+         (setq ,variable element-tmp)
+         (setq eoi eoi-tmp))
+       if eoi 
+       return (progn ,@result)
+       else do (progn ,@body))))
+
 ;; every 
 
 (defmethod ievery ((function function) iter)
@@ -1118,15 +1137,3 @@
       (equal item element))
     iter))
 
-;; macro utilities
-
-(defmacro doiterator (argument &body body)
-  (let
-    ((variable (nth 0 argument))
-      (formula (nth 1 argument))
-      (result (nth 2 argument))
-      (iter (gensym)))
-    `(loop with ,iter = (iterator ,formula) with ,variable do
-       (setq ,variable (inext ,iter))
-       if (eq ,variable *stop-iteration*) return ,result 
-       do (progn ,@body))))
